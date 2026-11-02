@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>학생 역량 변화 분석</title>
+<style>
+:root{font-family:system-ui,-apple-system,"Noto Sans KR",sans-serif;color:#172033;background:#f4f7fb;--blue:#2878d4;--red:#e34f58;--muted:#65728a;--line:#e2e8f0}
+*{box-sizing:border-box}body{margin:0}header{background:linear-gradient(120deg,#153b68,#2878d4);color:white;padding:32px 20px}
+.wrap{width:min(1180px,100% - 32px);margin:auto}h1{margin:0 0 8px;font-size:clamp(1.6rem,4vw,2.3rem)}header p{margin:0;color:#e4efff}
+main{padding:24px 0 40px}.layout{display:grid;grid-template-columns:minmax(280px,360px) minmax(0,1fr);gap:20px;align-items:start}
+.card{background:white;border:1px solid var(--line);border-radius:18px;padding:22px;box-shadow:0 8px 24px #1720330a}
+h2{font-size:1.15rem;margin:0 0 16px}.hint{font-size:.88rem;color:var(--muted);line-height:1.5;margin-top:-7px}
+.metric{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+label{display:block;font-size:.85rem;color:#42516a;margin-bottom:5px}
+input[type="text"],input[type="number"]{width:100%;border:1px solid #cbd5e1;border-radius:9px;padding:10px;font:inherit;min-width:0}
+input:focus{outline:2px solid #93c5fd;border-color:var(--blue)}
+.row{display:grid;grid-template-columns:minmax(90px,1.5fr) 1fr 1fr 34px;gap:8px;align-items:end;padding:12px 0;border-bottom:1px solid #edf1f6}
+.row:last-child{border-bottom:0}.field small{display:block;font-size:.72rem;color:var(--muted);margin-bottom:4px}
+button{border:0;border-radius:10px;padding:10px 13px;font:inherit;font-weight:650;cursor:pointer}
+.primary{background:var(--blue);color:white}.secondary{background:#eaf2fc;color:#1d4f88}.danger{background:#fff0f0;color:#b4232d;padding:8px}.actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:16px}
+.chart-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.9rem;color:#344054}.dot{display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:6px}
+.chartbox{width:100%;min-height:300px;display:flex;justify-content:center;align-items:center}canvas{width:100%;max-width:650px;height:auto;display:block}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:16px}
+.stat{background:#f8fafc;border:1px solid var(--line);border-radius:13px;padding:15px}.stat span{display:block;color:var(--muted);font-size:.82rem}.stat strong{display:block;font-size:1.45rem;margin-top:4px}
+.summary{margin-top:18px;background:#f8fafc;border-radius:13px;padding:16px;line-height:1.7}.summary h3{margin:0 0 8px;font-size:1rem}.summary p{margin:5px 0}
+footer{text-align:center;color:var(--muted);padding:18px;font-size:.85rem}
+@media(max-width:850px){.layout{grid-template-columns:1fr}.chartbox{min-height:250px}}
+@media(max-width:520px){.wrap{width:min(100% - 20px,1180px)}header{padding:25px 10px}.card{padding:16px}.row{grid-template-columns:minmax(85px,1.2fr) 1fr 1fr 30px;gap:5px}.row input{padding:8px 6px;font-size:.86rem}.stats{grid-template-columns:1fr}.chart-head{align-items:flex-start}}
+</style>
+</head>
+<body>
+<header><div class="wrap"><h1>학생 역량 변화 분석</h1><p>사전·사후 평가를 한눈에 비교하고 역량별 성장을 확인하세요.</p></div></header>
+<main class="wrap">
+<div class="layout">
+<section class="card" aria-labelledby="input-title">
+<h2 id="input-title">평가 점수 입력</h2>
+<p class="hint">점수는 0~100 범위로 입력하세요. 값을 수정하면 차트와 분석이 자동으로 갱신됩니다.</p>
+<div class="metric" aria-label="평가 범위">
+<div><label for="minScore">최솟값</label><input id="minScore" type="number" min="0" max="100" value="0"></div>
+<div><label for="maxScore">최댓값</label><input id="maxScore" type="number" min="1" max="100" value="100"></div>
+</div>
+<div id="rows"></div>
+<div class="actions">
+<button class="secondary" id="addBtn" type="button">＋ 지표 추가</button>
+<button class="primary" id="downloadBtn" type="button">차트 PNG 저장</button>
+</div>
+<p class="hint" style="margin:12px 0 0">지표 이름과 점수를 직접 수정할 수 있습니다. 삭제 버튼으로 지표를 제거할 수 있습니다.</p>
+</section>
+<section class="card" aria-labelledby="chart-title">
+<div class="chart-head"><h2 id="chart-title">사전·사후 역량 비교</h2>
+<div class="legend"><span><i class="dot" style="background:var(--blue)"></i>사전평가</span><span><i class="dot" style="background:var(--red)"></i>사후평가</span></div></div>
+<div class="chartbox"><canvas id="radar" width="720" height="590" role="img" aria-label="사전평가와 사후평가 점수를 겹쳐 표시한 레이더 차트"></canvas></div>
+<div class="stats">
+<div class="stat"><span>사전평가 평균</span><strong id="preAvg">47.2점</strong></div>
+<div class="stat"><span>사후평가 평균</span><strong id="postAvg">77.8점</strong></div>
+<div class="stat"><span>평균 변화</span><strong id="delta">+30.6점</strong></div>
+</div>
+<div class="summary" id="summary" aria-live="polite"><h3>분석 요약</h3></div>
+</section>
+</div>
+</main>
+<footer>학생 역량 변화 분석 · 입력 데이터는 이 브라우저 화면에서 시각화됩니다.</footer>
+<script>
+const initial = [
+ ["정보검색 능력",45,78],["비판적 사고",38,71],["디지털 도구 활용",52,85],
+ ["협업 능력",60,80],["창의적 문제해결",41,75]
+];
+let data = initial.map(([name,pre,post])=>({name,pre,post}));
+const rowsEl=document.getElementById('rows'), canvas=document.getElementById('radar'), ctx=canvas.getContext('2d');
+const css=getComputedStyle(document.documentElement), blue=css.getPropertyValue('--blue').trim(), red=css.getPropertyValue('--red').trim();
+const clamp=(v,min,max)=>Math.min(max,Math.max(min,Number(v)||0));
+function renderRows(){
+ rowsEl.innerHTML='';
+ data.forEach((d,i)=>{
+  const row=document.createElement('div');row.className='row';
+  row.innerHTML=`<div class="field"><small>역량 지표</small><input type="text" aria-label="역량 지표 이름 ${i+1}" value="${escapeHtml(d.name)}" data-i="${i}" data-key="name"></div>
+  <div class="field"><small>사전 점수</small><input type="number" min="0" max="100" aria-label="${escapeHtml(d.name)} 사전 점수" value="${d.pre}" data-i="${i}" data-key="pre"></div>
+  <div class="field"><small>사후 점수</small><input type="number" min="0" max="100" aria-label="${escapeHtml(d.name)} 사후 점수" value="${d.post}" data-i="${i}" data-key="post"></div>
+  <button class="danger" type="button" aria-label="${escapeHtml(d.name)} 삭제" data-remove="${i}">×</button>`;
+  rowsEl.appendChild(row);
+ });
+}
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function getRange(){let min=clamp(document.getElementById('minScore').value,0,100),max=clamp(document.getElementById('maxScore').value,1,100);if(max<=min)max=Math.min(100,min+1);return {min,max};}
+function draw(){
+ const W=canvas.width,H=canvas.height;ctx.clearRect(0,0,W,H);
+ const {min,max}=getRange(), n=data.length;
+ if(n<3){ctx.fillStyle='#64748b';ctx.font='18px sans-serif';ctx.textAlign='center';ctx.fillText('레이더 차트를 표시하려면 지표를 3개 이상 추가하세요.',W/2,H/2);updateSummary();return;}
+ const cx=W/2,cy=H/2+4,r=Math.min(W*.32,H*.34),labelR=r+34;
+ ctx.font='15px system-ui, sans-serif';ctx.lineWidth=1;ctx.strokeStyle='#dbe3ee';ctx.fillStyle='#64748b';
+ for(let level=1;level<=5;level++){
+  const rr=r*level/5;ctx.beginPath();
+  for(let i=0;i<n;i++){const a=-Math.PI/2+i*2*Math.PI/n,x=cx+Math.cos(a)*rr,y=cy+Math.sin(a)*rr;i?ctx.lineTo(x,y):ctx.moveTo(x,y);}
+  ctx.closePath();ctx.stroke();ctx.textAlign='left';ctx.textBaseline='middle';ctx.fillText(String(Math.round(min+(max-min)*level/5)),cx+5,cy-rr+1);
+ }
+ for(let i=0;i<n;i++){const a=-Math.PI/2+i*2*Math.PI/n,x=cx+Math.cos(a)*r,y=cy+Math.sin(a)*r;ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(x,y);ctx.stroke();
+  const lx=cx+Math.cos(a)*labelR,ly=cy+Math.sin(a)*labelR;ctx.fillStyle='#344054';ctx.font='bold 14px system-ui,sans-serif';ctx.textBaseline='middle';
+  ctx.textAlign=Math.cos(a)>.25?'left':Math.cos(a)<-.25?'right':'center';
+  wrapText(dataname(data[i].name),lx,ly,Math.max(80,r*.85),17);
+ }
+ function point(value,i){const a=-Math.PI/2+i*2*Math.PI/n,ratio=(clamp(value,min,max)-min)/(max-min);return [cx+Math.cos(a)*r*ratio,cy+Math.sin(a)*r*ratio];}
+ function polygon(key,color){
+  ctx.beginPath();data.forEach((d,i)=>{const [x,y]=point(d[key],i);i?ctx.lineTo(x,y):ctx.moveTo(x,y);});ctx.closePath();
+  ctx.fillStyle=color+'24';ctx.fill();ctx.strokeStyle=color;ctx.lineWidth=3;ctx.stroke();
+  data.forEach((d,i)=>{const [x,y]=point(d[key],i);ctx.beginPath();ctx.arc(x,y,4.5,0,Math.PI*2);ctx.fillStyle=color;ctx.fill();ctx.strokeStyle='white';ctx.lineWidth=1.5;ctx.stroke();});
+ }
+ polygon('pre',blue);polygon('post',red);updateSummary();
+}
+function dataname(s){return String(s||'이름 없는 지표');}
+function wrapText(text,x,y,maxWidth,lineHeight){
+ const words=text.length>12?[text.slice(0,12),text.slice(12)]:[text];let yy=y-(words.length-1)*lineHeight/2;
+ words.forEach(line=>{ctx.fillText(line,x,yy);yy+=lineHeight;});
+}
+function average(key){return data.length?data.reduce((s,d)=>s+Number(d[key]),0)/data.length:0;}
+function fmt(v){return Number(v).toFixed(1);}
+function updateSummary(){
+ const pre=average('pre'),post=average('post'),change=post-pre;
+ document.getElementById('preAvg').textContent=fmt(pre)+'점';
+ document.getElementById('postAvg').textContent=fmt(post)+'점';
+ document.getElementById('delta').textContent=(change>=0?'+':'')+fmt(change)+'점';
+ const diffs=data.map(d=>({...d,diff:Number(d.post)-Number(d.pre)}));
+ const best=diffs.length?diffs.reduce((a,b)=>a.diff>=b.diff?a:b):null;
+ const improved=diffs.filter(d=>d.diff>0).length;
+ const summary=document.getElementById('summary');
+ summary.innerHTML='<h3>분석 요약</h3>'+
+ `<p>• 전체 평균은 ${fmt(pre)}점에서 ${fmt(post)}점으로 <strong>${change>=0?'+':''}${fmt(change)}점</strong> 변화했습니다.</p>`+
+ `<p>• ${data.length}개 지표 중 <strong>${improved}개</strong> 지표에서 사후 점수가 상승했습니다.</p>`+
+ (best?`<p>• 가장 큰 향상: <strong>${escapeHtml(best.name||'이름 없는 지표')}</strong> (${best.diff>=0?'+':''}${fmt(best.diff)}점)</p>`:'')+
+ '<p class="hint">※ 점수 차이를 요약한 기술 통계이며, 교육 프로그램의 인과적 효과를 단독으로 입증하지는 않습니다.</p>';
+}
+rowsEl.addEventListener('input',e=>{
+ const el=e.target;if(!el.dataset.key)return;
+ const i=Number(el.dataset.i),key=el.dataset.key;if(!data[i])return;
+ if(key==='name')data[i][key]=el.value;
+ else data[i][key]=clamp(el.value,0,100);
+ draw();
+});
+rowsEl.addEventListener('change',e=>{
+ const el=e.target;if(el.dataset.key==='pre'||el.dataset.key==='post'){el.value=data[Number(el.dataset.i)][el.dataset.key];}
+ if(el.dataset.key==='name')renderRows();
+ draw();
+});
+rowsEl.addEventListener('click',e=>{const b=e.target.closest('[data-remove]');if(!b)return;if(data.length<=3){alert('레이더 차트를 위해 지표를 최소 3개 유지해 주세요.');return;}data.splice(Number(b.dataset.remove),1);renderRows();draw();});
+document.getElementById('addBtn').addEventListener('click',()=>{data.push({name:`새 지표 ${data.length-4>0?data.length-4:1}`,pre:0,post:0});renderRows();draw();rowsEl.lastElementChild?.querySelector('input')?.focus();});
+document.getElementById('minScore').addEventListener('input',draw);document.getElementById('maxScore').addEventListener('input',draw);
+document.getElementById('downloadBtn').addEventListener('click',()=>{
+ const link=document.createElement('a');link.download='학생-역량-사전사후-비교.png';link.href=canvas.toDataURL('image/png');link.click();
+});
+window.addEventListener('resize',draw);renderRows();draw();
+</script>
+</body>
+</html>

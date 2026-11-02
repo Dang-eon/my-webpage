@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>도형 돌리기·뒤집기 교구</title>
+<style>
+:root{--bg:#f6f7fb;--card:#fff;--ink:#1f2937;--sub:#6b7280;--line:#e5e7eb;--pri:#4f46e5;--ok:#16a34a;--bad:#dc2626;--shape:#93c5fd;--shape-s:#2563eb;--ghost:#fca5a5;--ghost-s:#dc2626;--grid:#e5e7eb;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#111827;--card:#1f2937;--ink:#f3f4f6;--sub:#9ca3af;--line:#374151;--pri:#818cf8;--shape:#1e3a8a;--shape-s:#60a5fa;--ghost:#7f1d1d;--ghost-s:#f87171;--grid:#374151}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Pretendard","Apple SD Gothic Neo","Malgun Gothic",sans-serif;padding:16px}
+.wrap{max-width:860px;margin:0 auto}
+h1{font-size:22px;margin:4px 0 12px}
+.tabs{display:flex;gap:8px;margin-bottom:12px}
+button{font:inherit;cursor:pointer;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:12px;padding:10px 14px;font-size:16px}
+button:active{transform:scale(.97)}
+.tab.on{background:var(--pri);color:#fff;border-color:var(--pri)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:12px}
+.shapes{display:flex;flex-wrap:wrap;gap:8px}
+.shapes button.on{border-color:var(--pri);outline:2px solid var(--pri)}
+.stage{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.pane{text-align:center}
+.pane b{display:block;margin-bottom:4px;font-size:15px}
+svg{width:100%;height:auto;max-height:340px;background:var(--card);border:1px solid var(--line);border-radius:12px}
+.ctrl{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.ctrl button{padding:14px 6px;font-size:15px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px}
+.state{color:var(--sub);font-size:15px;margin-top:8px;text-align:center}
+.msg{min-height:26px;text-align:center;font-size:18px;font-weight:700;margin:6px 0}
+.ok{color:var(--ok)}.bad{color:var(--bad)}
+.pri{background:var(--pri);color:#fff;border-color:var(--pri)}
+.hide{display:none}
+.shake{animation:sh .35s}
+@keyframes sh{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.big{font-size:44px;text-align:center;margin:8px 0}
+@media(max-width:520px){.ctrl{grid-template-columns:1fr 1fr}.stage{gap:6px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>🔷 도형 돌리기·뒤집기 교구</h1>
+<div class="tabs">
+<button class="tab on" id="tp">🧩 연습 모드</button>
+<button class="tab" id="tq">🎯 퀴즈 모드</button>
+</div>
+
+<div class="card" id="shapeCard"><div class="shapes" id="shapes"></div></div>
+
+<div class="card" id="quizBar" style="display:none">
+<div style="display:flex;justify-content:space-between;font-weight:700"><span id="qn">1 / 10</span><span id="lvl"></span><span id="qs">점수 0</span><button id="b_snd" style="padding:4px 10px">🔊</button></div>
+</div>
+
+<div class="card hide" id="editor">
+<div class="msg" style="font-size:20px">✏️ 나만의 도형 만들기</div>
+<div class="state">격자의 점을 순서대로 눌러 꼭짓점을 찍어 보세요 (3개 이상)</div>
+<svg id="svgE" viewBox="0 0 200 200" style="cursor:crosshair;touch-action:manipulation"></svg>
+<div class="row">
+<input id="eName" placeholder="도형 이름" maxlength="8" style="flex:1;min-width:110px;padding:10px;border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--ink);font:inherit">
+<button id="e_undo">↩ 되돌리기</button><button id="e_clear">지우기</button>
+<button class="pri" id="e_ok">완성</button><button id="e_cancel">취소</button>
+</div>
+<div class="msg bad" id="eMsg"></div>
+</div>
+
+<div class="card hide" id="diffCard">
+<div class="msg" style="font-size:20px">난이도를 골라 주세요</div>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px">
+<button data-lv="easy">🌱 쉽움<br><small>한 번만 바꾸면 돼요</small></button>
+<button data-lv="normal">🌿 보통<br><small>2~3번 바꿔요</small></button>
+<button data-lv="hard">🔥 어려움<br><small>45° 회전이 나와요</small></button>
+</div></div>
+
+<div class="card" id="play">
+<div class="stage">
+<div class="pane"><b id="lbL">처음 모양</b><svg id="svgL" viewBox="0 0 200 200"></svg></div>
+<div class="pane"><b>내 도형</b><svg id="svgR" viewBox="0 0 200 200"></svg></div>
+</div>
+<div class="state" id="state"></div>
+<div class="msg" id="msg"></div>
+<div class="ctrl">
+<button id="b_ccw">↺ 반시계 회전</button>
+<button id="b_cw">↻ 시계 회전</button>
+<button id="b_h">⇆ 좌우 뒤집기</button>
+<button id="b_v">⇅ 상하 뒤집기</button>
+</div>
+<div class="row">
+<button id="b_reset">처음으로</button>
+<span id="stepWrap"><button id="s90" class="on pri">90° 씩</button> <button id="s45">45° 씩</button></span>
+<button class="pri hide" id="b_check" style="margin-left:auto">✅ 정답 확인</button>
+<button class="pri hide" id="b_next">다음 문제 ▶</button>
+</div>
+</div>
+
+<div class="card hide" id="result">
+<div class="big" id="rEmoji">🏆</div>
+<div class="msg" id="rText"></div>
+<div class="row" style="justify-content:center"><button class="pri" id="b_again">다시 도전</button><button id="b_lv">난이도 바꾸기</button></div>
+</div>
+</div>
+
+<script>
+const R=80;
+const reg=n=>Array.from({length:n},(_,i)=>{const t=-Math.PI/2+2*Math.PI*i/n;return[R*Math.cos(t),R*Math.sin(t)]});
+const SHAPES={
+ tri:{n:'정삼각형',p:reg(3),mk:[0,0,1]},
+ sq:{n:'정사각형',p:[[-60,-60],[60,-60],[60,60],[-60,60]],mk:[0,0,1]},
+ rect:{n:'직사각형',p:[[-80,-45],[80,-45],[80,45],[-80,45]],mk:[0,0,.9]},
+ pen:{n:'정오각형',p:reg(5),mk:[0,0,1]},
+ rt:{n:'직각삼각형',p:[[-60,-50],[-60,50],[70,50]],mk:[-35,20,.6]},
+ L:{n:'ㄴ자 도형',p:[[-60,-70],[0,-70],[0,20],[60,20],[60,70],[-60,70]],mk:[-30,0,.9]}
+};
+const NS='http://www.w3.org/2000/svg';
+let mode='practice',shape='tri',step=90,M=[1,0,0,1],T=[1,0,0,1];
+let q={i:0,score:0,tries:0,done:false};
+const $=id=>document.getElementById(id);
+
+function mul(L){ // M = L * M ; M=[a,b,c,d], x'=ax+cy, y'=bx+dy
+ const [a,b,c,d]=M,[l1,l2,l3,l4]=L;
+ M=[l1*a+l2*b,l3*a+l4*b,l1*c+l2*d,l3*c+l4*d].map(v=>Math.round(v*1e6)/1e6);
+}
+const rot=deg=>{const t=deg*Math.PI/180,c=Math.cos(t),s=Math.sin(t);return[c,-s,s,c]};
+const FH=[-1,0,0,1],FV=[1,0,0,-1];
+const same=(A,B)=>A.every((v,i)=>Math.abs(v-B[i])<1e-3);
+
+function draw(svg,mat,ghost){
+ svg.innerHTML='';
+ for(let g=0;g<=200;g+=20){
+  [[g,0,g,200],[0,g,200,g]].forEach(([x1,y1,x2,y2])=>{const l=document.createElementNS(NS,'line');
+   l.setAttribute('x1',x1);l.setAttribute('y1',y1);l.setAttribute('x2',x2);l.setAttribute('y2',y2);
+   l.setAttribute('stroke','var(--grid)');l.setAttribute('stroke-width',g==100?1.6:.6);svg.appendChild(l)});
+ }
+ const S=SHAPES[shape],g=document.createElementNS(NS,'g');
+ g.setAttribute('transform',`translate(100 100) matrix(${mat.join(' ')} 0 0)`);
+ const poly=document.createElementNS(NS,'polygon');
+ poly.setAttribute('points',S.p.map(p=>p.join(',')).join(' '));
+ poly.setAttribute('fill',ghost?'var(--ghost)':'var(--shape)');
+ poly.setAttribute('stroke',ghost?'var(--ghost-s)':'var(--shape-s)');
+ poly.setAttribute('stroke-width',3);poly.setAttribute('stroke-linejoin','round');g.appendChild(poly);
+ const [mx,my,s]=S.mk,m=document.createElementNS(NS,'g');
+ m.setAttribute('transform',`translate(${mx} ${my}) scale(${s})`);
+ m.innerHTML='<line x1="0" y1="20" x2="0" y2="-30" stroke="#f59e0b" stroke-width="5" stroke-linecap="round"/><polygon points="0,-30 28,-20 0,-10" fill="#f59e0b"/><circle cx="0" cy="22" r="6" fill="#b45309"/>';
+ g.appendChild(m);svg.appendChild(g);
+}
+function describe(){
+ const [a,b,c,d]=M,det=a*d-b*c;
+ if(det<0) return '지금: 뒤집힌 상태 (거울에 비친 모양)';
+ let ang=Math.round(Math.atan2(b,a)*180/Math.PI);if(ang<0)ang+=360;
+ return ang===0?'지금: 처음 방향 그대로':`지금: 처음에서 시계 방향으로 ${ang}° 돌린 모양`;
+}
+function render(){
+ draw($('svgR'),M,false);
+ draw($('svgL'),T,mode==='quiz');
+ $('state').textContent=mode==='practice'?describe():'';
+}
+function op(L){
+ if(mode==='quiz'&&q.done)return;
+ mul(L);$('msg').textContent='';$('msg').className='msg';render();
+}
+$('b_cw').onclick=()=>op(rot(step));
+$('b_ccw').onclick=()=>op(rot(-step));
+$('b_h').onclick=()=>op(FH);
+$('b_v').onclick=()=>op(FV);
+$('b_reset').onclick=()=>{M=[1,0,0,1];$('msg').textContent='';render()};
+$('s90').onclick=()=>setStep(90);$('s45').onclick=()=>setStep(45);
+function setStep(v){step=v;$('s90').classList.toggle('pri',v==90);$('s45').classList.toggle('pri',v==45)}
+
+// shape buttons
+function buildShapes(){
+ const box=$('shapes');box.innerHTML='';
+ Object.keys(SHAPES).forEach(k=>{
+  const b=document.createElement('button');b.textContent=SHAPES[k].n;b.dataset.k=k;
+  b.onclick=()=>{if(mode==='quiz')return;shape=k;M=[1,0,0,1];buildShapes();render()};
+  box.appendChild(b)});
+ const a=document.createElement('button');a.textContent='➕ 도형 추가';a.onclick=openEditor;box.appendChild(a);
+ if(SHAPES[shape]&&SHAPES[shape].custom){const d=document.createElement('button');d.textContent='🗑 이 도형 삭제';d.onclick=delShape;box.appendChild(d)}
+ markShape();
+}
+// custom shapes
+function saveCustom(){try{const o={};Object.keys(SHAPES).forEach(k=>{if(SHAPES[k].custom)o[k]=SHAPES[k]});localStorage.setItem('customShapes',JSON.stringify(o))}catch(e){}}
+function loadCustom(){try{const o=JSON.parse(localStorage.getItem('customShapes')||'{}');Object.keys(o).forEach(k=>{if(o[k]&&Array.isArray(o[k].p))SHAPES[k]=o[k]})}catch(e){}}
+function delShape(){delete SHAPES[shape];shape='tri';M=[1,0,0,1];saveCustom();buildShapes();render()}
+let EP=[];
+function openEditor(){EP=[];$('eName').value='';$('eMsg').textContent='';drawEditor();$('play').classList.add('hide');$('editor').classList.remove('hide')}
+function closeEditor(){$('editor').classList.add('hide');$('play').classList.remove('hide')}
+function drawEditor(){
+ let h='';
+ for(let x=20;x<=180;x+=20)for(let y=20;y<=180;y+=20)h+=`<circle cx="${x}" cy="${y}" r="2.5" fill="var(--sub)"/>`;
+ h+='<line x1="100" y1="0" x2="100" y2="200" stroke="var(--grid)"/><line x1="0" y1="100" x2="200" y2="100" stroke="var(--grid)"/>';
+ const pts=EP.map(p=>p.join(',')).join(' ');
+ if(EP.length>=3)h+=`<polygon points="${pts}" fill="var(--shape)" fill-opacity=".6" stroke="var(--shape-s)" stroke-width="3" stroke-linejoin="round"/>`;
+ else if(EP.length>=2)h+=`<polyline points="${pts}" fill="none" stroke="var(--shape-s)" stroke-width="3"/>`;
+ EP.forEach((p,i)=>h+=`<circle cx="${p[0]}" cy="${p[1]}" r="6" fill="${i?'var(--pri)':'#f59e0b'}"/><text x="${p[0]+8}" y="${p[1]-8}" font-size="12" fill="var(--ink)">${i+1}</text>`);
+ $('svgE').innerHTML=h;
+}
+$('svgE').addEventListener('click',e=>{
+ const r=e.currentTarget.getBoundingClientRect(),sz=Math.min(r.width,r.height);
+ const px=(e.clientX-r.left-(r.width-sz)/2)/sz*200,py=(e.clientY-r.top-(r.height-sz)/2)/sz*200;
+ const cl=v=>Math.max(20,Math.min(180,Math.round(v/20)*20));
+ const x=cl(px),y=cl(py);
+ if(EP.some(p=>p[0]===x&&p[1]===y))return;
+ EP.push([x,y]);$('eMsg').textContent='';drawEditor();
+});
+$('e_undo').onclick=()=>{EP.pop();drawEditor()};
+$('e_clear').onclick=()=>{EP=[];drawEditor()};
+$('e_cancel').onclick=closeEditor;
+const ccw=(a,b,c)=>(c[1]-a[1])*(b[0]-a[0])>(b[1]-a[1])*(c[0]-a[0]);
+const segX=(a,b,c,d)=>ccw(a,c,d)!==ccw(b,c,d)&&ccw(a,b,c)!==ccw(a,b,d);
+function selfX(P){const n=P.length;for(let i=0;i<n;i++)for(let j=i+1;j<n;j++){if(j-i<2||(i===0&&j===n-1))continue;if(segX(P[i],P[(i+1)%n],P[j],P[(j+1)%n]))return true}return false}
+function segDist(p,a,b){const dx=b[0]-a[0],dy=b[1]-a[1],t=Math.max(0,Math.min(1,((p[0]-a[0])*dx+(p[1]-a[1])*dy)/(dx*dx+dy*dy)));return Math.hypot(p[0]-a[0]-t*dx,p[1]-a[1]-t*dy)}
+$('e_ok').onclick=()=>{
+ const P=EP,n=P.length,em=$('eMsg');
+ if(n<3){em.textContent='점을 3개 이상 찍어 주세요.';return}
+ if(selfX(P)){em.textContent='선이 서로 꼬였어요. 꼭짓점을 이어지는 순서대로 찍어 주세요.';return}
+ let A=0,cx=0,cy=0;
+ for(let i=0;i<n;i++){const [x0,y0]=P[i],[x1,y1]=P[(i+1)%n],f=x0*y1-x1*y0;A+=f;cx+=(x0+x1)*f;cy+=(y0+y1)*f}
+ A/=2;
+ if(Math.abs(A)<1){em.textContent='면이 만들어지지 않았어요. 점을 다시 찍어 주세요.';return}
+ cx/=6*A;cy/=6*A;
+ let pts=P.map(p=>[p[0]-cx,p[1]-cy]);
+ const k=Math.min(1,80/Math.max(...pts.map(p=>Math.hypot(p[0],p[1]))));
+ pts=pts.map(p=>[Math.round(p[0]*k*100)/100,Math.round(p[1]*k*100)/100]);
+ let inr=Infinity;for(let i=0;i<n;i++)inr=Math.min(inr,segDist([0,0],pts[i],pts[(i+1)%n]));
+ const s=Math.max(.3,Math.min(1,inr/32));
+ const cnt=Object.keys(SHAPES).filter(x=>SHAPES[x].custom).length+1;
+ const key='c'+Date.now();
+ SHAPES[key]={n:$('eName').value.trim()||('내 도형 '+cnt),p:pts,mk:[0,0,s],custom:true};
+ saveCustom();shape=key;M=[1,0,0,1];closeEditor();buildShapes();render();
+};
+function markShape(){[...$('shapes').children].forEach(b=>b.classList.toggle('on',b.dataset.k===shape))}
+
+// mode switch
+function setMode(m){
+ mode=m;
+ $('tp').classList.toggle('on',m==='practice');$('tq').classList.toggle('on',m==='quiz');
+ $('shapeCard').style.display=m==='practice'?'':'none';
+ $('quizBar').style.display='none';$('diffCard').classList.add('hide');$('editor').classList.add('hide');
+ $('stepWrap').style.display=m==='practice'?'':'none';
+ $('b_reset').classList.toggle('hide',false);
+ $('result').classList.add('hide');$('play').classList.remove('hide');
+ $('msg').textContent='';
+ if(m==='practice'){T=[1,0,0,1];M=[1,0,0,1];$('lbL').textContent='처음 모양';
+  $('b_check').classList.add('hide');$('b_next').classList.add('hide');markShape();render()}
+ else showDiff();
+}
+$('tp').onclick=()=>setMode('practice');$('tq').onclick=()=>setMode('quiz');
+
+// sound
+let AC=null,snd=true;
+function tone(f,t0,d,type,vol){const o=AC.createOscillator(),g=AC.createGain();o.type=type;o.frequency.value=f;const t=AC.currentTime+t0;g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.001,t+d);o.connect(g);g.connect(AC.destination);o.start(t);o.stop(t+d)}
+function sfx(k){if(!snd)return;try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();if(AC.state==='suspended')AC.resume();
+ if(k==='ok'){[523,659,784,1047].forEach((f,i)=>tone(f,i*.1,.25,'triangle',.25))}
+ else if(k==='win'){[[523,0],[659,.12],[784,.24],[1047,.36],[784,.52],[1047,.64],[1319,.8]].forEach(([f,t])=>tone(f,t,.3,'triangle',.25));[1047,1319,1568].forEach(f=>tone(f,.8,.9,'sine',.12))}
+ else{tone(220,0,.18,'sawtooth',.2);tone(165,.18,.3,'sawtooth',.2)}}catch(e){}}
+$('b_snd').onclick=()=>{snd=!snd;$('b_snd').textContent=snd?'🔊':'🔇'};
+// quiz
+const LV={easy:{n:'쉽움 🌱',ops:[rot(90),rot(-90),FH,FV],min:1,max:1},normal:{n:'보통 🌿',ops:[rot(90),rot(-90),rot(180),FH,FV],min:2,max:3},hard:{n:'어려움 🔥',ops:[rot(45),rot(-45),rot(90),rot(-90),FH,FV],min:3,max:4}};
+let level='normal';
+function showDiff(){$('play').classList.add('hide');$('result').classList.add('hide');$('quizBar').style.display='none';$('diffCard').classList.remove('hide')}
+function startQuiz(lv){
+ level=lv;q={i:0,score:0,tries:0,done:false};setStep(90);
+ $('diffCard').classList.add('hide');$('result').classList.add('hide');$('play').classList.remove('hide');
+ $('quizBar').style.display='';$('lvl').textContent=LV[lv].n;
+ $('stepWrap').style.display=lv==='hard'?'':'none';
+ newQ();
+}
+document.querySelectorAll('[data-lv]').forEach(b=>b.onclick=()=>startQuiz(b.dataset.lv));
+$('b_lv').onclick=showDiff;
+function newQ(){
+ const keys=Object.keys(SHAPES);shape=keys[Math.floor(Math.random()*keys.length)];
+ const C=LV[level],ops=C.ops;
+ do{
+  const save=M;M=[1,0,0,1];
+  const n=C.min+Math.floor(Math.random()*(C.max-C.min+1));
+  for(let k=0;k<n;k++)mul(ops[Math.floor(Math.random()*ops.length)]);
+  T=M;M=save;
+ }while(same(T,[1,0,0,1]));
+ M=[1,0,0,1];q.tries=0;q.done=false;
+ $('lbL').textContent='🎯 목표 모양 (똑같이 만들어 보세요)';
+ $('qn').textContent=`${q.i+1} / 10`;$('qs').textContent=`점수 ${q.score}`;
+ $('msg').textContent='';$('msg').className='msg';
+ $('b_check').classList.remove('hide');$('b_next').classList.add('hide');
+ $('svgR').classList.remove('shake');
+ render();
+}
+$('b_check').onclick=()=>{
+ if(q.done)return;
+ if(same(M,T)){
+  q.done=true;
+  if(q.tries===0)q.score++;
+  sfx('ok');
+  $('msg').textContent=q.tries===0?'🎉 정답! 한 번에 맞혔어요!':'👍 정답이에요!';
+  $('msg').className='msg ok';$('qs').textContent=`점수 ${q.score}`;
+  $('b_check').classList.add('hide');$('b_next').classList.remove('hide');
+  $('b_next').textContent=q.i===9?'결과 보기 🏁':'다음 문제 ▶';
+ }else{
+  q.tries++;sfx('bad');
+  const f=(m)=>m[0]*m[3]-m[1]*m[2]<0;
+  let t='앗, 아직 달라요. 다시 해 볼까요?';
+  if(q.tries>=2)t+=f(M)!==f(T)?' 💡 힌트: 뒤집기가 필요해요.':' 💡 힌트: 뒤집기는 맞아요. 돌려서 맞춰 보세요.';
+  $('msg').textContent=t;$('msg').className='msg bad';
+  const s=$('svgR');s.classList.remove('shake');void s.getBoundingClientRect();s.classList.add('shake');
+ }
+};
+$('b_next').onclick=()=>{
+ if(q.i===9){showResult();return}
+ q.i++;newQ();
+};
+function showResult(){sfx('win');
+ $('play').classList.add('hide');$('result').classList.remove('hide');
+ $('rEmoji').textContent=q.score>=9?'🏆':q.score>=6?'🌟':'💪';
+ $('rText').textContent=`10문제 중 ${q.score}문제를 한 번에 맞혔어요!`;
+}
+$('b_again').onclick=()=>startQuiz(level);
+
+loadCustom();buildShapes();setMode('practice');
+</script>
+</body>
+</html>

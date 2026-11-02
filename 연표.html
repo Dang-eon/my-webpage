@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>조선시대 인터랙티브 연표</title>
+<style>
+:root{--bg:#faf6ee;--card:#fff;--text:#2b2118;--sub:#7a6a58;--line:#cdbfa8;--accent:#b5472d;--accent2:#e9c46a;--shadow:rgba(60,40,20,.18);
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1d1913;--card:#2a241b;--text:#f3ead9;--sub:#b3a48c;--line:#5a4d3a;--accent:#e07a5f;--accent2:#e9c46a;--shadow:rgba(0,0,0,.5)}}
+:root[data-theme="dark"]{--bg:#1d1913;--card:#2a241b;--text:#f3ead9;--sub:#b3a48c;--line:#5a4d3a;--accent:#e07a5f;--accent2:#e9c46a;--shadow:rgba(0,0,0,.5)}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--text);font-family:"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;display:flex;flex-direction:column;overflow:hidden}
+header{padding:10px 14px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between}
+h1{margin:0;font-size:1.15rem}
+.bar{display:flex;gap:8px;align-items:center}
+.toggle{display:flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;background:var(--card)}
+button{font:inherit;color:var(--text)}
+.toggle button{border:0;background:none;padding:6px 12px;cursor:pointer;font-size:.85rem}
+.toggle button[aria-pressed="true"]{background:var(--accent);color:#fff}
+.add{border:1px solid var(--accent);background:none;color:var(--accent);border-radius:999px;padding:6px 12px;cursor:pointer;font-size:.85rem;font-weight:700}
+#tl{position:relative;flex:1;min-height:0;margin:0 8px 8px}
+.axis{position:absolute;background:var(--line);border-radius:2px}
+.tick{position:absolute;background:var(--line)}
+.tk{position:absolute;font-size:.68rem;color:var(--sub);white-space:nowrap}
+.stem{position:absolute;background:var(--line)}
+.dot{position:absolute;width:18px;height:18px;border-radius:50%;background:var(--card);border:3px solid var(--accent);transform:translate(-50%,-50%);cursor:pointer;z-index:2;transition:transform .3s,background .3s,box-shadow .3s}
+.dot.cur{background:var(--accent);transform:translate(-50%,-50%) scale(1.5);box-shadow:0 0 0 7px color-mix(in srgb,var(--accent) 25%,transparent)}
+.lab{position:absolute;z-index:3;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:3px 6px;cursor:pointer;display:flex;flex-direction:column;justify-content:center;overflow:hidden;font-size:.78rem;line-height:1.25;transition:background .3s,color .3s,border-color .3s}
+.lab b{color:var(--accent)}
+.lab span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lab.cur{background:var(--accent);border-color:var(--accent);color:#fff}
+.lab.cur b{color:#fff}
+.lab.cur span{font-weight:700}
+.stem.cur{background:var(--accent)}
+#ov{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;padding:16px;z-index:20}
+#ov.on{display:flex}
+#pop{background:var(--card);border-radius:20px;max-width:480px;width:100%;max-height:88vh;overflow:auto;padding:22px;box-shadow:0 20px 50px var(--shadow);animation:pop .3s ease}
+@keyframes pop{from{transform:translateY(20px) scale(.96);opacity:0}to{transform:none;opacity:1}}
+#pop .emoji{font-size:2.4rem}
+#pop .py{color:var(--accent);font-weight:700}
+#pop h2{margin:2px 0 10px;font-size:1.35rem}
+#pop p{line-height:1.75;margin:0 0 12px;white-space:pre-wrap}
+#pop .why{background:color-mix(in srgb,var(--accent2) 30%,transparent);border-radius:12px;padding:10px 12px;font-size:.95rem}
+.nav{display:flex;gap:8px;margin-top:16px}
+.nav button{flex:1;padding:10px;border-radius:12px;border:1px solid var(--line);background:none;cursor:pointer}
+.nav button.pri{background:var(--accent);color:#fff;border-color:var(--accent)}
+.nav button:disabled{opacity:.35;cursor:default}
+.del{margin-top:10px;width:100%;padding:8px;border-radius:12px;border:1px solid var(--line);background:none;color:var(--sub);cursor:pointer;font-size:.85rem}
+label{display:block;font-size:.85rem;color:var(--sub);margin:10px 0 4px}
+input,textarea{width:100%;padding:9px 10px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--text);font:inherit}
+textarea{min-height:80px;resize:vertical}
+.err{color:var(--accent);font-size:.85rem;min-height:1.2em;margin-top:8px}
+</style>
+</head>
+<body>
+<header>
+  <h1>🏯 조선시대 연표</h1>
+  <div class="bar">
+    <button class="add" id="ba">＋ 사건 추가</button>
+    <div class="toggle" role="group" aria-label="레이아웃 선택">
+      <button id="bh" aria-pressed="true">↔ 가로</button>
+      <button id="bv" aria-pressed="false">↕ 세로</button>
+    </div>
+  </div>
+</header>
+<div id="tl"></div>
+<div id="ov" role="dialog" aria-modal="true"><div id="pop"></div></div>
+<script>
+const BASE=[
+{id:"b1",y:1392,n:"조선 건국",e:"👑",t:"이성계 장군이 새로운 나라 ‘조선’을 세웠어요. 고려가 힘을 잃자 백성들이 더 살기 좋은 나라를 원했거든요. 수도는 한양(지금의 서울)으로 정했어요.",w:"약 500년 동안 이어진 조선의 시작이에요."},
+{id:"b2",y:1418,n:"세종대왕 즉위",e:"🤴",t:"세종대왕이 조선의 네 번째 왕이 되었어요. 세종대왕은 공부를 아주 좋아했고, 백성을 사랑하는 마음이 컸어요. 과학자들을 도와 해시계와 측우기 같은 발명품도 만들게 했어요.",w:"조선의 문화와 과학이 크게 발전한 시기가 시작되었어요."},
+{id:"b3",y:1443,n:"한글 창제",e:"✍️",t:"세종대왕이 우리말을 쉽게 적을 수 있는 글자, 한글을 만들었어요. 그때는 어려운 한자만 써서 많은 백성이 글을 읽고 쓰지 못했거든요. 1446년에 ‘훈민정음’이라는 이름으로 널리 알렸어요.",w:"누구나 쉽게 배울 수 있는 우리 글자가 생겼어요."},
+{id:"b4",y:1592,n:"임진왜란",e:"⚓",t:"일본이 조선을 크게 쳐들어온 전쟁이에요. 이순신 장군은 거북선을 앞세워 바다에서 크게 이겼고, 곳곳에서 백성들이 의병이 되어 나라를 지켰어요.",w:"7년 동안 이어진 전쟁으로 많은 피해를 입었지만, 힘을 모아 나라를 지켜 냈어요."},
+{id:"b5",y:1636,n:"병자호란",e:"❄️",t:"청나라가 조선에 쳐들어온 전쟁이에요. 겨울에 인조 임금이 남한산성으로 피신했지만, 추위와 식량 부족으로 오래 버티지 못하고 결국 항복했어요.",w:"전쟁이 끝난 뒤에도 백성들의 삶은 한동안 힘들었어요."},
+{id:"b6",y:1897,n:"대한제국 선포",e:"🇰🇷",t:"고종 임금이 나라 이름을 ‘대한제국’으로 바꾸고 황제가 되었어요. 스스로 힘 있는 독립 국가임을 세계에 알리고, 새로운 문물을 받아들여 나라를 튼튼하게 만들고 싶었어요.",w:"조선이 근대 국가로 나아가려는 노력을 보여 주는 사건이에요."}
+];
+const tl=document.getElementById('tl'),ov=document.getElementById('ov'),pop=document.getElementById('pop');
+let custom=[],E=[],els=[],cur=null,mode=innerWidth>innerHeight?'h':'v',delArm=false;
+try{custom=JSON.parse(localStorage.getItem('tl-custom')||'[]')}catch(e){custom=[]}
+function save(){try{localStorage.setItem('tl-custom',JSON.stringify(custom))}catch(e){}}
+function build(){E=[...BASE,...custom.map(c=>({...c,c:1}))].sort((a,b)=>a.y-b.y)}
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function mk(cls,css){const d=document.createElement('div');d.className=cls;d.style.cssText=css||'';tl.appendChild(d);return d}
+function render(){
+  tl.innerHTML='';els=[];
+  const W=tl.clientWidth,H=tl.clientHeight;if(!W||!H)return;
+  const h=mode==='h',r=50,minY=E[0].y,maxY=E[E.length-1].y;
+  let lo=Math.floor(minY/r)*r,hi=Math.ceil(maxY/r)*r;if(hi-lo<r)hi=lo+r;
+  const sp=hi-lo,ts=sp>250?100:sp>100?50:sp>40?10:5,AX=60,pad=h?34:30,L=(h?W:H)-pad*2,pos=y=>pad+(y-lo)/sp*L;
+  if(h)mk('axis',`left:0;right:0;top:${H/2-2}px;height:4px`);else mk('axis',`top:0;bottom:0;left:${AX-2}px;width:4px`);
+  for(let y=Math.ceil(lo/ts)*ts;y<=hi;y+=ts){const p=pos(y);
+    if(h){mk('tick',`left:${p-1}px;top:${H/2-8}px;width:2px;height:16px`);const t=mk('tk',`left:${p}px;top:${H/2+10}px;transform:translateX(-50%)`);t.textContent=y+'년'}
+    else{mk('tick',`left:${AX-8}px;top:${p-1}px;width:16px;height:2px`);const t=mk('tk',`left:0;width:${AX-12}px;text-align:right;top:${p-8}px`);t.textContent=y+'년'}}
+  const LW=W<340?86:100,LHh=46,LHv=38;let lanes=[],S=0;
+  if(h){const n=Math.max(1,Math.min(3,Math.floor((H/2-30)/54)));for(let l=0;l<n;l++)lanes.push({s:'up',l,end:-1e9},{s:'dn',l,end:-1e9})}
+  else{const n=Math.max(2,Math.min(4,Math.floor((W-AX-20)/92)));S=(W-AX-20)/n;for(let l=0;l<n;l++)lanes.push({l,end:-1e9})}
+  E.forEach((e,i)=>{
+    const p=pos(e.y),half=h?LW/2:LHv/2,start=p-half;
+    let ln=lanes.find(x=>start>=x.end+4);if(!ln)ln=lanes.reduce((a,b)=>a.end<=b.end?a:b);
+    ln.end=p+half;
+    let stem,dot,lab;
+    if(h){const off=30+ln.l*54;
+      stem=mk('stem',`left:${p-.75}px;width:1.5px;top:${ln.s==='up'?H/2-off:H/2}px;height:${off}px`);
+      dot=mk('dot',`left:${p}px;top:${H/2}px`);
+      lab=mk('lab',`left:${p-LW/2}px;width:${LW}px;height:${LHh}px;top:${ln.s==='up'?H/2-off-LHh:H/2+off}px`)}
+    else{const off=22+ln.l*S;
+      stem=mk('stem',`left:${AX}px;top:${p-.75}px;width:${off}px;height:1.5px`);
+      dot=mk('dot',`left:${AX}px;top:${p}px`);
+      lab=mk('lab',`left:${AX+off}px;width:${S-8}px;height:${LHv}px;top:${p-LHv/2}px`)}
+    lab.innerHTML=`<b>${e.y}년</b><span>${esc(e.n)}</span>`;lab.title=e.n;
+    dot.onclick=lab.onclick=()=>open(i);
+    els.push({id:e.id,a:[stem,dot,lab]});
+  });
+  apply();
+}
+function apply(){els.forEach(x=>x.a.forEach(el=>el.classList.toggle('cur',x.id===cur)))}
+function open(i){
+  const d=E[i];cur=d.id;apply();delArm=false;
+  pop.innerHTML=`<div class="emoji">${esc(d.e||'📌')}</div><div class="py">${d.y}년</div><h2>${esc(d.n)}</h2><p>${esc(d.t||'아직 설명이 없어요.')}</p>${d.w?`<div class="why">💡 ${esc(d.w)}</div>`:''}<div class="nav"><button id="pv" ${i==0?'disabled':''}>← 이전</button><button class="pri" id="cl">닫기</button><button id="nx" ${i==E.length-1?'disabled':''}>다음 →</button></div>${d.c?'<button class="del" id="dl">이 사건 삭제</button>':''}`;
+  ov.classList.add('on');
+  pop.querySelector('#cl').onclick=close;pop.querySelector('#pv').onclick=()=>open(i-1);pop.querySelector('#nx').onclick=()=>open(i+1);
+  const dl=pop.querySelector('#dl');if(dl)dl.onclick=()=>{if(!delArm){delArm=true;dl.textContent='정말 삭제할까요? 한 번 더 누르세요';return}
+    custom=custom.filter(c=>c.id!==d.id);save();cur=null;build();close();render()}
+}
+function close(){ov.classList.remove('on')}
+function form(){
+  pop.innerHTML=`<h2>＋ 사건 추가하기</h2><label for="fy">연도 *</label><input id="fy" type="number" inputmode="numeric" placeholder="예: 1760">
+<label for="fn">사건 이름 *</label><input id="fn" maxlength="20" placeholder="예: 수원 화성 완공">
+<label for="ft">쉬운 설명</label><textarea id="ft" placeholder="초등학생도 이해할 수 있게 적어 주세요."></textarea>
+<label for="fe">이모지 (선택)</label><input id="fe" maxlength="4" placeholder="📌">
+<div class="err" id="er"></div><div class="nav"><button id="fc">취소</button><button class="pri" id="fs">추가</button></div>`;
+  ov.classList.add('on');
+  pop.querySelector('#fc').onclick=close;
+  pop.querySelector('#fs').onclick=()=>{
+    const y=parseInt(pop.querySelector('#fy').value,10),n=pop.querySelector('#fn').value.trim(),er=pop.querySelector('#er');
+    if(!(y>=1&&y<=2100)){er.textContent='연도를 1~2100 사이 숫자로 적어 주세요.';return}
+    if(!n){er.textContent='사건 이름을 적어 주세요.';return}
+    const c={id:'c'+Date.now(),y,n,e:pop.querySelector('#fe').value.trim()||'📌',t:pop.querySelector('#ft').value.trim(),w:''};
+    custom.push(c);save();build();render();open(E.findIndex(x=>x.id===c.id));
+  };
+  setTimeout(()=>pop.querySelector('#fy').focus(),50);
+}
+ov.onclick=e=>{if(e.target===ov)close()};
+document.addEventListener('keydown',e=>{if(e.key==='Escape')close();const i=E.findIndex(x=>x.id===cur);if(ov.classList.contains('on')&&pop.querySelector('#nx')&&document.activeElement.tagName!=='INPUT'){if(e.key==='ArrowLeft'&&i>0)open(i-1);if(e.key==='ArrowRight'&&i<E.length-1)open(i+1)}});
+function setL(m){mode=m;document.getElementById('bh').setAttribute('aria-pressed',m==='h');document.getElementById('bv').setAttribute('aria-pressed',m==='v');render()}
+document.getElementById('bh').onclick=()=>setL('h');
+document.getElementById('bv').onclick=()=>setL('v');
+document.getElementById('ba').onclick=form;
+new ResizeObserver(render).observe(tl);
+build();setL(mode);
+</script>
+</body>
+</html>
