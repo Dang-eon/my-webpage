@@ -3,65 +3,297 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>온라인 도장 및 사인 생성기</title>
-    <!-- 상업용 무료 구글 폰트 6종 불러오기 -->
+    <title>도장 & 커스텀 사인 생성기</title>
+    <!-- 구글 폰트 로딩 (안정성 확보를 위해 기본 폰트 먼저 표시) -->
     <link href="https://fonts.googleapis.com/css2?family=East+Sea+Dokdo&family=Nanum+Myeongjo:wght@700&family=Nanum+Pen+Script&family=Nanum+Brush+Script&family=Hi+Melody&family=Gamja+Flower&display=swap" rel="stylesheet">
     <style>
-        * { box-sizing: border-box; }
-        body { 
-            font-family: 'Nanum Myeongjo', sans-serif; 
-            background-color: #f4f4f9; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            min-height: 100vh; 
-            margin: 0; 
-            padding: 20px;
-        }
-        .container { 
-            background: white; 
-            padding: 25px 20px; 
-            border-radius: 12px; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1); 
-            width: 100%; 
-            max-width: 420px; 
-        }
+        body { font-family: 'Nanum Myeongjo', sans-serif; background-color: #e9ecef; margin: 0; padding: 20px; display: flex; justify-content: center; }
+        .wrap { background: #fff; padding: 25px 20px; border-radius: 12px; width: 100%; max-width: 400px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        h2 { text-align: center; font-size: 22px; margin-top: 0; margin-bottom: 20px; color: #333; }
         
-        /* 탭 디자인 */
-        .tabs {
-            display: flex;
-            margin-bottom: 20px;
-            border-bottom: 2px solid #eee;
-        }
-        .tab-btn {
-            flex: 1;
-            padding: 12px;
-            background: none;
-            border: none;
-            font-size: 16px;
-            font-weight: bold;
-            color: #777;
-            cursor: pointer;
-            transition: 0.3s;
-        }
-        .tab-btn.active {
-            color: #dc3545;
-            border-bottom: 3px solid #dc3545;
-        }
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
+        .tabs { display: flex; border-bottom: 2px solid #ddd; margin-bottom: 20px; }
+        .tab { flex: 1; padding: 12px; text-align: center; cursor: pointer; font-weight: bold; color: #aaa; }
+        .tab.active { color: #d9534f; border-bottom: 3px solid #d9534f; }
+        .content { display: none; }
+        .content.active { display: block; }
+        
+        .box { margin-bottom: 15px; }
+        .box label { display: block; font-weight: bold; margin-bottom: 5px; font-size: 14px; color: #555; }
+        .box input[type="text"], .box select { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 15px; box-sizing: border-box; }
+        
+        .radio-group { margin-bottom: 15px; display: flex; gap: 15px; }
+        .radio-group label { font-weight: normal; font-size: 14px; cursor: pointer; }
+        
+        .canvas-box { background: #f8f9fa; padding: 15px; text-align: center; border-radius: 8px; margin-bottom: 15px; touch-action: none; border: 1px solid #eee; }
+        canvas { border: 1px dashed #bbb; max-width: 100%; cursor: crosshair; }
+        
+        .btns { display: flex; gap: 10px; }
+        .btn { flex: 1; padding: 14px; font-size: 15px; font-weight: bold; color: #fff; border: none; border-radius: 8px; cursor: pointer; }
+        .btn-red { background: #d9534f; }
+        .btn-gray { background: #6c757d; }
+    </style>
+</head>
+<body>
 
-        .form-group { margin-bottom: 15px; text-align: left; }
-        label { display: block; margin-bottom: 8px; font-weight: bold; font-size: 14px; color: #555; }
-        input[type="text"], select { 
-            width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 16px; outline: none;
-        }
-        input:focus, select:focus { border-color: #dc3545; }
+<div class="wrap">
+    <h2>도장 & 커스텀 사인</h2>
+    
+    <div class="tabs">
+        <div class="tab active" id="tab-dojang" onclick="goTab('dojang')">서명 도장</div>
+        <div class="tab" id="tab-sign" onclick="goTab('sign')">커스텀 사인</div>
+    </div>
+
+    <!-- 도장 탭 -->
+    <div id="content-dojang" class="content active">
+        <div class="box">
+            <label>이름 (최대 3글자)</label>
+            <input type="text" id="nameInput" value="홍길동" maxlength="4">
+        </div>
+        <div class="box">
+            <label>글씨체 선택</label>
+            <select id="fontSelect">
+                <option value="'Nanum Myeongjo'">나눔명조 (기본 정자체)</option>
+                <option value="'East Sea Dokdo'">독도체 (개성있는 붓글씨)</option>
+                <option value="'Nanum Pen Script'">나눔 필기체</option>
+            </select>
+        </div>
+        <div class="box">
+            <label>외곽선 모양</label>
+            <select id="shapeSelect">
+                <option value="circle">원형 (기본)</option>
+                <option value="square">사각형 (결재인)</option>
+            </select>
+        </div>
+        <div class="canvas-box">
+            <canvas id="dojangCanvas" width="150" height="150"></canvas>
+        </div>
+        <div class="btns">
+            <button class="btn btn-red" onclick="downloadImg('dojangCanvas', 'nameInput', '도장')">투명 배경 다운로드</button>
+        </div>
+    </div>
+
+    <!-- 사인 탭 -->
+    <div id="content-sign" class="content">
+        <div class="radio-group">
+            <label><input type="radio" name="signMode" value="draw" checked onchange="changeSignMode()"> 직접 그리기</label>
+            <label><input type="radio" name="signMode" value="text" onchange="changeSignMode()"> 폰트로 만들기</label>
+        </div>
         
-        .radio-group { display: flex; gap: 15px; margin-bottom: 15px; font-family: sans-serif; font-size: 14px; }
-        .radio-group label { display: inline-flex; align-items: center; font-weight: normal; cursor: pointer; }
-        
-        .canvas-container { 
-            margin: 20px 0; display: flex; justify-content: center; background: #fafafa; padding: 20px; border-radius: 8px; border: 1px solid #eee;
-            touch-action: none; /* 모바일 캔버스 드래그 시 스크롤 방지 */
+        <div id="sign-text-box" style="display: none;">
+            <div class="box">
+                <label>사인 내용</label>
+                <input type="text" id="signInput" value="홍길동">
+            </div>
+            <div class="box">
+                <label>손글씨 폰트</label>
+                <select id="signFontSelect">
+                    <option value="'Nanum Pen Script'">나눔 필기체</option>
+                    <option value="'Nanum Brush Script'">나눔 브러시체</option>
+                    <option value="'Hi Melody'">하이 멜로디체</option>
+                    <option value="'Gamja Flower'">감자꽃 마을체</option>
+                    <option value="'East Sea Dokdo'">독도 붓글씨체</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="canvas-box">
+            <canvas id="signCanvas" width="300" height="150"></canvas>
+        </div>
+        <div class="btns">
+            <button class="btn btn-gray" onclick="clearSign()">다시 쓰기</button>
+            <button class="btn btn-red" onclick="downloadImg('signCanvas', 'signInput', '사인')">투명 배경 다운로드</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 탭 이동 로직
+    function goTab(tabName) {
+        document.querySelectorAll('.tab').forEach(function(el) { el.classList.remove('active'); });
+        document.querySelectorAll('.content').forEach(function(el) { el.classList.remove('active'); });
+        document.getElementById('tab-' + tabName).classList.add('active');
+        document.getElementById('content-' + tabName).classList.add('active');
+    }
+
+    // 도장 그리기
+    function drawDojang() {
+        var canvas = document.getElementById('dojangCanvas');
+        var ctx = canvas.getContext('2d');
+        var name = document.getElementById('nameInput').value.trim();
+        var font = document.getElementById('fontSelect').value;
+        var shape = document.getElementById('shapeSelect').value;
+
+        var text = name;
+        if (text.length === 3) text += "인";
+        else if (text.length === 2) text += "의인";
+        else if (text.length === 1) text += "의도장";
+        while (text.length < 4) text += " ";
+        text = text.substring(0, 4);
+
+        var fontSize = font.indexOf("Dokdo") !== -1 ? 65 : (font.indexOf("Pen Script") !== -1 ? 70 : 55);
+
+        // 실제 그리기 함수
+        function render() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            var color = '#d9534f';
+            var cx = canvas.width / 2;
+            var cy = canvas.height / 2;
+            
+            ctx.beginPath();
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 4;
+            if (shape === 'circle') {
+                ctx.arc(cx, cy, 68, 0, 2 * Math.PI);
+            } else {
+                var size = 136, x = cx - size/2, y = cy - size/2;
+                ctx.rect(x, y, size, size);
+            }
+            ctx.stroke();
+
+            ctx.fillStyle = color;
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.font = fontSize + "px " + font;
+
+            var offset = 33;
+            var pos = [
+                { x: cx + offset, y: cy - offset },
+                { x: cx + offset, y: cy + offset },
+                { x: cx - offset, y: cy - offset },
+                { x: cx - offset, y: cy + offset }
+            ];
+
+            var yAdj = font.indexOf("Dokdo") !== -1 ? 2 : (font.indexOf("Pen Script") !== -1 ? 8 : 5);
+            for (var i = 0; i < 4; i++) {
+                ctx.fillText(text[i], pos[i].x, pos[i].y + yAdj);
+            }
         }
+
+        // 폰트 로드 대기 (에러 방지용 setTimeout 조합)
+        if (document.fonts && document.fonts.ready) {
+            document.fonts.ready.then(render);
+        } else {
+            setTimeout(render, 300);
+        }
+    }
+
+    // 커스텀 사인 로직
+    var signCanvas = document.getElementById('signCanvas');
+    var sCtx = signCanvas.getContext('2d');
+    var isDrawing = false;
+
+    function getPos(e) {
+        var rect = signCanvas.getBoundingClientRect();
+        var clientX = e.clientX, clientY = e.clientY;
+        if (e.touches && e.touches.length > 0) {
+            clientX = e.touches[0].clientX;
+            clientY = e.touches[0].clientY;
+        }
+        return {
+            x: (clientX - rect.left) * (signCanvas.width / rect.width),
+            y: (clientY - rect.top) * (signCanvas.height / rect.height)
+        };
+    }
+
+    function startDraw(e) {
+        if(getRadioValue('signMode') === 'text') return;
+        e.preventDefault();
+        isDrawing = true;
+        draw(e);
+    }
+
+    function endDraw() {
+        isDrawing = false;
+        sCtx.beginPath();
+    }
+
+    function draw(e) {
+        if (!isDrawing) return;
+        e.preventDefault();
+        var pos = getPos(e);
+        sCtx.lineWidth = 4;
+        sCtx.lineCap = 'round';
+        sCtx.strokeStyle = '#000';
+        sCtx.lineTo(pos.x, pos.y);
+        sCtx.stroke();
+        sCtx.beginPath();
+        sCtx.moveTo(pos.x, pos.y);
+    }
+
+    signCanvas.addEventListener('mousedown', startDraw);
+    signCanvas.addEventListener('mouseup', endDraw);
+    signCanvas.addEventListener('mousemove', draw);
+    signCanvas.addEventListener('touchstart', startDraw, { passive: false });
+    signCanvas.addEventListener('touchend', endDraw);
+    signCanvas.addEventListener('touchmove', draw, { passive: false });
+
+    // 라디오 버튼 값 가져오기
+    function getRadioValue(name) {
+        var radios = document.getElementsByName(name);
+        for(var i=0; i<radios.length; i++) {
+            if(radios[i].checked) return radios[i].value;
+        }
+        return '';
+    }
+
+    // 사인 모드 변경
+    function changeSignMode() {
+        var mode = getRadioValue('signMode');
+        document.getElementById('sign-text-box').style.display = (mode === 'text') ? 'block' : 'none';
+        clearSign();
+    }
+
+    // 사인 텍스트 그리기
+    function drawSignText() {
+        if (getRadioValue('signMode') !== 'text') return;
+        
+        var text = document.getElementById('signInput').value.trim();
+        var font = document.getElementById('signFontSelect').value;
+        
+        function render() {
+            sCtx.clearRect(0, 0, signCanvas.width, signCanvas.height);
+            sCtx.fillStyle = '#000';
+            sCtx.textAlign = 'center';
+            sCtx.textBaseline = 'middle';
+            sCtx.font = "65px " + font;
+            sCtx.fillText(text, signCanvas.width / 2, signCanvas.height / 2 + 5);
+        }
+
+        if (document.fonts && document.fonts.ready) {
+            document.fonts.ready.then(render);
+        } else {
+            setTimeout(render, 300);
+        }
+    }
+
+    // 사인 캔버스 초기화
+    function clearSign() {
+        sCtx.clearRect(0, 0, signCanvas.width, signCanvas.height);
+        if (getRadioValue('signMode') === 'text') {
+            drawSignText();
+        }
+    }
+
+    // 이미지 다운로드
+    function downloadImg(canvasId, inputId, suffix) {
+        var canvas = document.getElementById(canvasId);
+        var link = document.createElement('a');
+        var name = document.getElementById(inputId).value.trim() || '서명';
+        link.download = name + "_" + suffix + ".png";
+        link.href = canvas.toDataURL("image/png");
+        link.click();
+    }
+
+    // 이벤트 연결 및 초기화
+    document.getElementById('nameInput').addEventListener('input', drawDojang);
+    document.getElementById('fontSelect').addEventListener('change', drawDojang);
+    document.getElementById('shapeSelect').addEventListener('change', drawDojang);
+    document.getElementById('signInput').addEventListener('input', drawSignText);
+    document.getElementById('signFontSelect').addEventListener('change', drawSignText);
+
+    window.onload = function() {
+        setTimeout(drawDojang, 500);
+    };
+</script>
+</body>
+</html>
