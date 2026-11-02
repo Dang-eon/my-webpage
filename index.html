@@ -299,7 +299,7 @@
       document.querySelectorAll("[data-view]").forEach(b => b.setAttribute("aria-pressed", b.dataset.view === state.view));
       document.querySelectorAll("[data-sort]").forEach(b => b.setAttribute("aria-pressed", b.dataset.sort === state.sort));
       dirBtn.textContent = state.sort === "created"
-        ? (state.desc ? "최신 먼저" : "오래된 먼저")
+        ? (state.desc ? "최신 순" : "오래된 순")
         : (state.desc ? "ㅎ부터 (역순)" : "ㄱ부터");
       try { localStorage.setItem("homepage-projects", JSON.stringify(state)); } catch (e) {}
     }
