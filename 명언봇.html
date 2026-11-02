@@ -196,4 +196,327 @@
             border: none;
             border-radius: 8px;
             font-weight: bold;
-            cursor:
+            cursor: pointer;
+        }
+
+        .quote-list {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            max-height: 50vh;
+            overflow-y: auto;
+            padding-bottom: 20px;
+        }
+
+        .list-item {
+            background: #fff;
+            border: 1px solid #eee;
+            padding: 16px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .list-item-content { flex: 1; margin-right: 12px; }
+        .list-item-text { font-size: 0.9rem; font-weight: bold; margin-bottom: 4px; }
+        .list-item-author { font-size: 0.8rem; color: var(--text-sub); }
+        .list-item-badge { font-size: 0.7rem; background: #eee; padding: 2px 6px; border-radius: 4px; display: inline-block; margin-bottom: 6px; }
+        
+        .btn-delete {
+            background: #ff4d4f;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+    </style>
+</head>
+<body>
+
+<div id="app-container">
+    <header>
+        <h1>마음 토닥</h1>
+        <button class="manage-btn-top" onclick="switchView('manage')">목록 관리</button>
+    </header>
+
+    <!-- 홈 화면 (감정 선택) -->
+    <main id="view-home" class="view-section active">
+        <p style="color: var(--text-sub); margin-bottom: 20px;">지금 당신의 기분은 어떤가요?</p>
+        <div class="emotion-grid">
+            <button class="emotion-btn btn-happy" onclick="selectEmotion('happy')">
+                <span class="emoji">😊</span>
+                기쁘고 행복함
+            </button>
+            <button class="emotion-btn btn-sad" onclick="selectEmotion('sad')">
+                <span class="emoji">😢</span>
+                슬프고 우울함
+            </button>
+            <button class="emotion-btn btn-burnout" onclick="selectEmotion('burnout')">
+                <span class="emoji">🫠</span>
+                지치고 번아웃
+            </button>
+            <button class="emotion-btn btn-stress" onclick="selectEmotion('stress')">
+                <span class="emoji">🌪️</span>
+                불안하고 스트레스
+            </button>
+        </div>
+    </main>
+
+    <!-- 명언 표시 화면 -->
+    <main id="view-quote" class="view-section">
+        <div class="quote-category-title" id="quote-title">감정 상태</div>
+        <div class="quote-card">
+            <div class="quote-text" id="quote-text">"명언이 들어갈 자리입니다."</div>
+            <div class="quote-author" id="quote-author">- 발언자 -</div>
+        </div>
+        <div class="action-btns">
+            <button class="action-btn btn-back" onclick="switchView('home')">처음으로</button>
+            <button class="action-btn btn-next" onclick="showRandomQuote()">다른 명언 보기</button>
+        </div>
+    </main>
+
+    <!-- 명언 관리 화면 -->
+    <main id="view-manage" class="view-section">
+        <h2 style="margin-bottom: 20px; font-size: 1.2rem;">명언 관리</h2>
+        
+        <div class="add-form">
+            <select id="add-category">
+                <option value="happy">기쁘고 행복함</option>
+                <option value="sad">슬프고 우울함</option>
+                <option value="burnout">지치고 번아웃</option>
+                <option value="stress">불안하고 스트레스</option>
+            </select>
+            <input type="text" id="add-text" placeholder="명언 내용을 입력하세요">
+            <input type="text" id="add-author" placeholder="발언자 (예: 작자 미상)">
+            <button class="btn-add" onclick="addQuote()">추가하기</button>
+        </div>
+
+        <select id="filter-category" style="width:100%; padding: 10px; margin-bottom: 12px; border-radius: 8px; border: 1px solid #ddd;" onchange="renderManageList()">
+            <option value="all">전체 보기</option>
+            <option value="happy">기쁘고 행복함</option>
+            <option value="sad">슬프고 우울함</option>
+            <option value="burnout">지치고 번아웃</option>
+            <option value="stress">불안하고 스트레스</option>
+        </select>
+
+        <div class="quote-list" id="manage-list">
+            <!-- 목록 렌더링 영역 -->
+        </div>
+
+        <button class="action-btn btn-back" style="margin-top: 20px; width: 100%;" onclick="switchView('home')">돌아가기</button>
+    </main>
+</div>
+
+<script>
+    // 1. 기본 데이터 (각 감정별 20개, 총 80개)
+    const defaultQuotes = {
+        happy: [
+            {t: "행복은 습관이다, 그것을 몸에 지니라.", a: "허버트 허버드"},
+            {t: "웃음 없는 하루는 낭비한 하루다.", a: "찰리 채플린"},
+            {t: "행복의 문 하나가 닫히면 다른 문이 열린다.", a: "헬렌 켈러"},
+            {t: "기쁨을 주는 사람만이 기쁨을 얻을 수 있다.", a: "바이런"},
+            {t: "가장 큰 행복은 우리가 사랑받고 있다는 확신이다.", a: "빅터 프랭클"},
+            {t: "오늘을 즐겨라.", a: "호라티우스"},
+            {t: "좋은 기분은 좋은 일들을 끌어당긴다.", a: "작자 미상"},
+            {t: "행복은 무엇보다도 건강 속에 있다.", a: "G.W. 커티스"},
+            {t: "작은 기쁨이 모여 큰 행복을 만든다.", a: "작자 미상"},
+            {t: "마음이 밝으면 모든 것이 밝게 보인다.", a: "작자 미상"},
+            {t: "지금 이 순간의 행복을 만끽하라.", a: "에크하르트 톨"},
+            {t: "행복한 사람은 스스로 만족하는 사람이다.", a: "아리스토텔레스"},
+            {t: "당신의 미소가 세상을 바꿀 수 있다.", a: "작자 미상"},
+            {t: "행복은 여정이지, 목적지가 아니다.", a: "로이 M. 굿맨"},
+            {t: "감사하는 마음이 곧 행복이다.", a: "에피쿠로스"},
+            {t: "오늘 하루도 선물입니다.", a: "엘리너 루스벨트"},
+            {t: "스스로 행복하다고 믿는 사람이 가장 행복하다.", a: "푸블릴리우스 시루스"},
+            {t: "기쁨은 나누면 배가 된다.", a: "스웨덴 속담"},
+            {t: "긍정적인 생각은 긍정적인 결과를 낳는다.", a: "작자 미상"},
+            {t: "당신은 오늘 가장 빛나는 사람입니다.", a: "작자 미상"}
+        ],
+        sad: [
+            {t: "울고 싶을 때는 소리 내어 울어도 괜찮아.", a: "작자 미상"},
+            {t: "눈물은 영혼의 얼음을 녹인다.", a: "헤르만 헤세"},
+            {t: "밤이 깊을수록 별은 더욱 빛난다.", a: "토마스 카라일"},
+            {t: "겨울이 오면 봄도 머지않으리.", a: "퍼시 비시 셸리"},
+            {t: "슬픔은 나누면 반이 된다.", a: "스웨덴 속담"},
+            {t: "비가 온 뒤에 무지개가 뜬다.", a: "작자 미상"},
+            {t: "지금의 아픔도 결국 지나갈 거야.", a: "작자 미상"},
+            {t: "모든 꽃이 같은 날 피지는 않는다.", a: "작자 미상"},
+            {t: "가장 어두운 시간은 해 뜨기 직전이다.", a: "파울로 코엘료"},
+            {t: "상처 사이로 빛이 스며든다.", a: "루미"},
+            {t: "잠시 주저앉아도 괜찮아, 다시 일어설 테니까.", a: "작자 미상"},
+            {t: "슬픔이 너를 삼키지 않도록 스스로를 안아줘.", a: "작자 미상"},
+            {t: "너의 잘못이 아니야.", a: "작자 미상"},
+            {t: "오늘 하루 겪어낸 네가 정말 자랑스러워.", a: "작자 미상"},
+            {t: "끝이 보이지 않아도 넌 앞으로 나아가고 있어.", a: "작자 미상"},
+            {t: "구름 뒤에는 항상 태양이 빛나고 있다.", a: "작자 미상"},
+            {t: "아픈 만큼 너는 더 단단해질 거야.", a: "작자 미상"},
+            {t: "내일은 내일의 태양이 뜬다.", a: "마가렛 미첼"},
+            {t: "힘들 땐 무리해서 웃지 않아도 돼.", a: "작자 미상"},
+            {t: "너는 세상에 단 하나뿐인 소중한 사람이야.", a: "작자 미상"}
+        ],
+        burnout: [
+            {t: "아무것도 하지 않아도 괜찮은 날이 필요해.", a: "작자 미상"},
+            {t: "쉼표도 문장의 중요한 일부란다.", a: "작자 미상"},
+            {t: "잘하고 있어, 그러니 조금만 쉬어가자.", a: "작자 미상"},
+            {t: "때로는 멈추는 것이 가장 빠른 길일 수 있다.", a: "작자 미상"},
+            {t: "방전된 배터리로는 아무것도 할 수 없어, 충전이 필요해.", a: "작자 미상"},
+            {t: "너무 완벽하지 않아도 괜찮아.", a: "작자 미상"},
+            {t: "오늘 하루 무사히 보낸 것만으로도 대단해.", a: "작자 미상"},
+            {t: "남들과 속도를 맞출 필요는 없어.", a: "작자 미상"},
+            {t: "너 자신에게 가장 다정한 사람이 되어줘.", a: "작자 미상"},
+            {t: "조금 늦어도 목적지에 도착하기만 하면 돼.", a: "작자 미상"},
+            {t: "짐을 잠시 내려놓아도 세상은 멈추지 않아.", a: "작자 미상"},
+            {t: "숨을 깊게 들이마시고 천천히 내쉬어봐.", a: "작자 미상"},
+            {t: "너무 애쓰지 않아도 돼, 흘러가는 대로 둬.", a: "작자 미상"},
+            {t: "스스로에게 '수고했어'라고 말해주세요.", a: "작자 미상"},
+            {t: "당신의 가치는 성취로만 증명되지 않습니다.", a: "작자 미상"},
+            {t: "오늘은 그저 푹 자고 일어나는 것에 집중해.", a: "작자 미상"},
+            {t: "방향만 맞다면 천천히 가도 괜찮아.", a: "작자 미상"},
+            {t: "네가 편안해야 너의 세상도 편안해져.", a: "작자 미상"},
+            {t: "바쁘게 돌아가는 세상 속에서 너만의 박자를 찾아.", a: "작자 미상"},
+            {t: "잠시 눈을 감고 온전히 널 위한 시간을 가져.", a: "작자 미상"}
+        ],
+        stress: [
+            {t: "이 또한 지나가리라.", a: "솔로몬"},
+            {t: "걱정의 40%는 절대 일어나지 않을 일이다.", a: "어니 젤린스키"},
+            {t: "내가 통제할 수 없는 일은 걱정하지 마라.", a: "에픽테토스"},
+            {t: "심호흡을 하세요. 모든 것은 결국 해결됩니다.", a: "작자 미상"},
+            {t: "미래의 불안이 오늘의 평화를 훔치지 못하게 해.", a: "작자 미상"},
+            {t: "너는 네가 생각하는 것보다 훨씬 강해.", a: "작자 미상"},
+            {t: "지금 당장 해야 할 작은 한 가지에만 집중해.", a: "작자 미상"},
+            {t: "실패를 두려워하지 마, 그것도 배움의 과정일 뿐이야.", a: "작자 미상"},
+            {t: "스트레스는 나를 발전시키는 신호일 수도 있어.", a: "작자 미상"},
+            {t: "불안하다는 건 네가 그만큼 잘하고 싶다는 증거야.", a: "작자 미상"},
+            {t: "모든 걸 한 번에 완벽하게 할 필요는 없어.", a: "작자 미상"},
+            {t: "폭풍이 지나고 나면 바다는 다시 잔잔해진다.", a: "작자 미상"},
+            {t: "얽힌 실타래도 천천히 하나씩 풀면 풀린다.", a: "작자 미상"},
+            {t: "닥치지 않은 일까지 미리 사서 걱정하지 마.", a: "작자 미상"},
+            {t: "네가 느끼는 감정은 모두 타당해, 스스로를 믿어.", a: "작자 미상"},
+            {t: "한 걸음씩 나아가면 어느새 산 정상에 있을 거야.", a: "작자 미상"},
+            {t: "주변의 소음보다 네 마음의 소리에 귀 기울여.", a: "작자 미상"},
+            {t: "오늘 하루 분량의 걱정만 하세요.", a: "마태복음"},
+            {t: "긴장하고 있다는 건, 네가 진심이라는 뜻이야.", a: "작자 미상"},
+            {t: "눈앞의 안개는 걸어가다 보면 걷힐 거야.", a: "작자 미상"}
+        ]
+    };
+
+    const categoryNames = {
+        happy: "기쁘고 행복함",
+        sad: "슬프고 우울함",
+        burnout: "지치고 번아웃",
+        stress: "불안하고 스트레스"
+    };
+
+    let quotesData = {};
+    let currentCategory = null;
+
+    // 2. 초기화 및 로컬 스토리지 연동
+    function initApp() {
+        const savedData = localStorage.getItem('mindTodakQuotes');
+        if (savedData) {
+            quotesData = JSON.parse(savedData);
+        } else {
+            // 깊은 복사로 기본 데이터 할당
+            quotesData = JSON.parse(JSON.stringify(defaultQuotes));
+            saveData();
+        }
+    }
+
+    function saveData() {
+        localStorage.setItem('mindTodakQuotes', JSON.stringify(quotesData));
+    }
+
+    // 3. 화면 전환 로직
+    function switchView(viewId) {
+        document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+        document.getElementById(`view-${viewId}`).classList.add('active');
+        
+        if (viewId === 'manage') {
+            renderManageList();
+        }
+    }
+
+    // 4. 명언 표시 로직
+    function selectEmotion(category) {
+        currentCategory = category;
+        document.getElementById('quote-title').innerText = categoryNames[category];
+        showRandomQuote();
+        switchView('quote');
+    }
+
+    function showRandomQuote() {
+        const list = quotesData[currentCategory];
+        if (list.length === 0) {
+            document.getElementById('quote-text').innerText = "이 감정에 등록된 명언이 없습니다.";
+            document.getElementById('quote-author').innerText = "";
+            return;
+        }
+        const randomIndex = Math.floor(Math.random() * list.length);
+        const quote = list[randomIndex];
+        document.getElementById('quote-text').innerText = `"${quote.t}"`;
+        document.getElementById('quote-author').innerText = `- ${quote.a} -`;
+    }
+
+    // 5. 명언 관리 (추가, 삭제, 렌더링)
+    function addQuote() {
+        const category = document.getElementById('add-category').value;
+        const text = document.getElementById('add-text').value.trim();
+        let author = document.getElementById('add-author').value.trim();
+
+        if (!text) {
+            alert('명언 내용을 입력해주세요.');
+            return;
+        }
+        if (!author) author = '작자 미상';
+
+        quotesData[category].push({t: text, a: author});
+        saveData();
+        
+        document.getElementById('add-text').value = '';
+        document.getElementById('add-author').value = '';
+        renderManageList();
+        alert('추가되었습니다.');
+    }
+
+    function deleteQuote(category, index) {
+        if (confirm('정말로 이 명언을 삭제하시겠습니까?')) {
+            quotesData[category].splice(index, 1);
+            saveData();
+            renderManageList();
+        }
+    }
+
+    function renderManageList() {
+        const filter = document.getElementById('filter-category').value;
+        const listContainer = document.getElementById('manage-list');
+        listContainer.innerHTML = '';
+
+        for (const [catKey, catName] of Object.entries(categoryNames)) {
+            if (filter !== 'all' && filter !== catKey) continue;
+
+            quotesData[catKey].forEach((quote, index) => {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'list-item';
+                itemDiv.innerHTML = `
+                    <div class="list-item-content">
+                        <span class="list-item-badge">${catName}</span>
+                        <div class="list-item-text">${quote.t}</div>
+                        <div class="list-item-author">${quote.a}</div>
+                    </div>
+                    <button class="btn-delete" onclick="deleteQuote('${catKey}', ${index})">삭제</button>
+                `;
+                listContainer.appendChild(itemDiv);
+            });
+        }
+    }
+
+    // 실행
+    initApp();
+</script>
+
+</body>
+</html>
