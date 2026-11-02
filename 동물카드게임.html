@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>동물 짝맞추기 게임</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Import a playful font */
+        @import url('https://fonts.googleapis.com/css2?family=Jua&display=swap');
+
+        body {
+            font-family: 'Jua', sans-serif;
+            background-color: #fdf2f8; /* Soft pink background */
+            overflow-x: hidden;
+            touch-action: manipulation;
+        }
+
+        /* 3D Card Flip CSS */
+        .perspective-1000 {
+            perspective: 1000px;
+        }
+
+        .card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            transition: transform 0.5s cubic-bezier(0.4, 0.2, 0.2, 1);
+            transform-style: preserve-3d;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            border-radius: 1rem;
+        }
+
+        .card.flipped .card-inner {
+            transform: rotateY(180deg);
+        }
+
+        .card-front, .card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            border-radius: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            user-select: none;
+            cursor: pointer;
+        }
+
+        /* The side showing the question mark (hidden side of the game) */
+        .card-back {
+            background: linear-gradient(135deg, #fbcfe8 0%, #f472b6 100%);
+            color: white;
+            border: 4px solid #fff;
+        }
+
+        /* The side showing the animal emoji (revealed side) */
+        .card-front {
+            background-color: white;
+            transform: rotateY(180deg);
+            border: 4px solid #f472b6;
+        }
+
+        /* Floating animation for title */
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+        .animate-float {
+            animation: float 3s ease-in-out infinite;
+        }
+
+        /* Pulse animation for match */
+        @keyframes pulse-match {
+            0% { transform: scale(1) rotateY(180deg); }
+            50% { transform: scale(1.1) rotateY(180deg); }
+            100% { transform: scale(1) rotateY(180deg); }
+        }
+        .matched .card-inner {
+            animation: pulse-match 0.5s ease-in-out;
+            box-shadow: 0 0 15px 5px rgba(251, 191, 36, 0.6);
+        }
+
+        /* Responsive card sizes */
+        .card {
+            width: 4.5rem;
+            height: 5.5rem;
+        }
+        @media (min-width: 400px) {
+            .card { width: 5.5rem; height: 6.5rem; font-size: 3.5rem; }
+        }
+        @media (min-width: 640px) {
+            .card { width: 7rem; height: 8rem; font-size: 4.5rem; }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center py-8">
+
+    <!-- Header Section -->
+    <header class="text-center mb-6 z-10">
+        <h1 class="text-4xl md:text-5xl text-pink-500 mb-4 drop-shadow-md animate-float tracking-wide">
+            🐾 동물 짝맞추기 🐾
+        </h1>
+        <div class="flex flex-wrap items-center justify-center gap-4 text-xl md:text-2xl">
+            <div class="bg-white px-6 py-2 rounded-full shadow-md text-gray-700 border-2 border-pink-200 flex gap-4">
+                <span>점수: <span id="score" class="text-pink-500 font-bold">0</span></span>
+                <span class="border-l-2 border-pink-200 pl-4">시도: <span id="attempts" class="text-blue-500 font-bold">0</span></span>
+            </div>
+            <button id="restart-btn" onclick="initGame()" class="bg-yellow-400 hover:bg-yellow-300 text-yellow-900 px-6 py-2 rounded-full shadow-md transition transform hover:scale-105 active:scale-95 border-2 border-yellow-500">
+                다시 시작!
+            </button>
+        </div>
+    </header>
+
+    <!-- Game Board -->
+    <main>
+        <div id="game-board" class="grid grid-cols-4 gap-3 sm:gap-4 md:gap-5 perspective-1000 z-10 relative max-w-2xl mx-auto">
+            <!-- Cards will be injected here by JS -->
+        </div>
+    </main>
+
+    <!-- Fireworks Canvas (Hidden initially, covers screen) -->
+    <canvas id="fireworks" class="fixed inset-0 w-full h-full pointer-events-none z-0"></canvas>
+
+    <!-- Victory Modal Overlay -->
+    <div id="victory-modal" class="fixed inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-50 hidden opacity-0 transition-opacity duration-500">
+        <div class="bg-white p-8 md:p-12 rounded-3xl shadow-2xl text-center border-4 border-pink-400 transform scale-90 transition-transform duration-500" id="victory-content">
+            <h2 class="text-5xl md:text-6xl text-yellow-500 mb-4 drop-shadow-md">🎉 축하합니다! 🎉</h2>
+            <p class="text-3xl text-gray-700 mb-8">모든 동물을 다 맞췄어요!</p>
+            <p class="text-2xl text-pink-500 mb-2">최종 점수: <span id="final-score" class="font-bold"></span>점</p>
+            <p class="text-xl text-blue-500 mb-8">총 시도 횟수: <span id="final-attempts" class="font-bold"></span>회</p>
+            <button onclick="initGame()" class="bg-pink-400 hover:bg-pink-500 text-white text-3xl px-10 py-4 rounded-full shadow-lg transition transform hover:scale-110 active:scale-95">
+                한 번 더 하기!
+            </button>
+        </div>
+    </div>
+
+    <!-- Game Logic and Audio Script -->
+    <script>
+        // --- Game Configuration & State ---
+        const EMOJIS = ['🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼']; // 8 pairs = 80 max score
+        let cards = [];
+        let flippedCards = [];
+        let matchedPairs = 0;
+        let score = 0;
+        let attempts = 0;
+        let isLocked = false; // Prevents clicking while animations/delays are happening
+
+        const boardEl = document.getElementById('game-board');
+        const scoreEl = document.getElementById('score');
+        const attemptsEl = document.getElementById('attempts');
+        const victoryModal = document.getElementById('victory-modal');
+        const victoryContent = document.getElementById('victory-content');
+        const finalScoreEl = document.getElementById('final-score');
+        const finalAttemptsEl = document.getElementById('final-attempts');
+
+        // --- Audio System (Web Audio API) ---
+        // Create audio context lazily to comply with browser autoplay policies
+        let audioCtx;
+        
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        // Generic function to synthesize simple sounds
+        function playTone(freq, type, duration, vol=0.1, slideFreq=null) {
+            initAudio();
+            if (!audioCtx) return;
+
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+
+            osc.type = type;
+            osc.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            const now = audioCtx.currentTime;
+            
+            // Frequency setup
+            osc.frequency.setValueAtTime(freq, now);
+            if (slideFreq) {
+                osc.frequency.exponentialRampToValueAtTime(slideFreq, now + duration);
+            }
+
+            // Volume envelope (Attack, Decay)
+            gainNode.gain.setValueAtTime(0, now);
+            gainNode.gain.linearRampToValueAtTime(vol, now + 0.05); // quick fade in
+            gainNode.gain.exponentialRampToValueAtTime(0.001, now + duration); // fade out
+
+            osc.start(now);
+            osc.stop(now + duration);
+        }
+
+        // Specific Sound Effects
+        const sfx = {
+            flip: () => playTone(400, 'sine', 0.15, 0.1, 600), // Quick upward pop
+            match: () => {
+                // Happy chord arpeggio
+                playTone(523.25, 'triangle', 0.3, 0.1); // C5
+                setTimeout(() => playTone(659.25, 'triangle', 0.3, 0.1), 100); // E5
+                setTimeout(() => playTone(783.99, 'triangle', 0.4, 0.1), 200); // G5
+            },
+            mismatch: () => playTone(200, 'sawtooth', 0.4, 0.05, 100), // Sad downward slide
+            victory: () => {
+                // Fanfare
+                [523.25, 523.25, 523.25, 659.25, 783.99, 659.25, 783.99].forEach((freq, i) => {
+                    const delay = [0, 150, 300, 450, 600, 750, 900][i];
+                    const dur = i === 6 ? 0.8 : 0.15;
+                    setTimeout(() => playTone(freq, 'square', dur, 0.08), delay);
+                });
+            }
+        };
+
+        // --- Game Logic ---
+        function shuffle(array) {
+            let currentIndex = array.length, randomIndex;
+            while (currentIndex !== 0) {
+                randomIndex = Math.floor(Math.random() * currentIndex);
+                currentIndex--;
+                [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+            }
+            return array;
+        }
+
+        function initGame() {
+            // Reset state
+            flippedCards = [];
+            matchedPairs = 0;
+            score = 0;
+            attempts = 0;
+            isLocked = false;
+            scoreEl.textContent = score;
+            attemptsEl.textContent = attempts;
+            
+            // Hide Victory Modal
+            victoryModal.classList.add('hidden');
+            victoryModal.classList.remove('opacity-100');
+            victoryContent.classList.remove('scale-100');
+            
+            // Clear Fireworks
+            cancelAnimationFrame(animationId);
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles = [];
+
+            // Prepare deck (8 pairs)
+            const deck = shuffle([...EMOJIS, ...EMOJIS]);
+            
+            // Render Board
+            boardEl.innerHTML = '';
+            deck.forEach((emoji, index) => {
+                const card = document.createElement('div');
+                card.classList.add('card');
+                card.dataset.emoji = emoji;
+                card.dataset.index = index;
+
+                card.innerHTML = `
+                    <div class="card-inner">
+                        <div class="card-back">❓</div>
+                        <div class="card-front">${emoji}</div>
+                    </div>
+                `;
+                
+                // Event listener
+                card.addEventListener('click', () => handleCardClick(card));
+                boardEl.appendChild(card);
+            });
+
+            // Try to init audio (might be blocked if no user interaction yet, handled in click)
+            initAudio();
+        }
+
+        function handleCardClick(card) {
+            initAudio(); // Ensure audio context is ready on first interaction
+            
+            // Ignore click if board is locked, card is already flipped, or matched
+            if (isLocked || card.classList.contains('flipped') || card.classList.contains('matched')) {
+                return;
+            }
+
+            sfx.flip();
+            card.classList.add('flipped');
+            flippedCards.push(card);
+
+            if (flippedCards.length === 2) {
+                checkMatch();
+            }
+        }
+
+        function checkMatch() {
+            isLocked = true;
+            attempts++;
+            attemptsEl.textContent = attempts;
+
+            const [card1, card2] = flippedCards;
+            const isMatch = card1.dataset.emoji === card2.dataset.emoji;
+
+            if (isMatch) {
+                // Match Success
+                setTimeout(() => {
+                    sfx.match();
+                    card1.classList.add('matched');
+                    card2.classList.add('matched');
+                    
+                    score = Math.min(80, score + 10);
+                    scoreEl.textContent = score;
+                    
+                    // Add bouncy animation to score
+                    scoreEl.classList.add('transform', 'scale-150', 'transition', 'text-yellow-500');
+                    setTimeout(() => scoreEl.classList.remove('transform', 'scale-150', 'text-yellow-500'), 300);
+
+                    matchedPairs++;
+                    resetFlipped();
+
+                    if (matchedPairs === EMOJIS.length) {
+                        handleVictory();
+                    }
+                }, 400); // slight delay to let flip animation finish before playing sound/effect
+                
+            } else {
+                // Match Failed
+                setTimeout(() => {
+                    sfx.mismatch();
+                    score = Math.max(0, score - 2); // Penalty, but don't go below 0
+                    scoreEl.textContent = score;
+                    
+                    card1.classList.remove('flipped');
+                    card2.classList.remove('flipped');
+                    resetFlipped();
+                }, 1000); // Wait 1 second before flipping back
+            }
+        }
+
+        function resetFlipped() {
+            flippedCards = [];
+            isLocked = false;
+        }
+
+        function handleVictory() {
+            setTimeout(() => {
+                sfx.victory();
+                finalScoreEl.textContent = score;
+                finalAttemptsEl.textContent = attempts;
+                
+                // Show modal with animation
+                victoryModal.classList.remove('hidden');
+                // Trigger reflow
+                void victoryModal.offsetWidth;
+                victoryModal.classList.add('opacity-100');
+                victoryContent.classList.add('scale-100');
+
+                startFireworks();
+            }, 500);
+        }
+
+        // --- Fireworks Particle System ---
+        const canvas = document.getElementById('fireworks');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+        let animationId;
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        class Particle {
+            constructor(x, y, color) {
+                this.x = x;
+                this.y = y;
+                this.color = color;
+                const angle = Math.random() * Math.PI * 2;
+                const speed = Math.random() * 6 + 2; // Random explosion speed
+                this.vx = Math.cos(angle) * speed;
+                this.vy = Math.sin(angle) * speed;
+                this.life = 1.0;
+                this.decay = Math.random() * 0.015 + 0.015;
+                this.gravity = 0.05;
+                this.size = Math.random() * 4 + 2;
+            }
+
+            update() {
+                this.vy += this.gravity;
+                this.x += this.vx;
+                this.y += this.vy;
+                this.life -= this.decay;
+            }
+
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(${this.color}, ${this.life})`;
+                ctx.fill();
+            }
+        }
+
+        const colors = [
+            '255, 99, 132',   // Pink
+            '54, 162, 235',   // Blue
+            '255, 206, 86',   // Yellow
+            '75, 192, 192',   // Teal
+            '153, 102, 255'   // Purple
+        ];
+
+        function createExplosion(x, y) {
+            const color = colors[Math.floor(Math.random() * colors.length)];
+            for (let i = 0; i < 50; i++) {
+                particles.push(new Particle(x, y, color));
+            }
+        }
+
+        function animateFireworks() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Occasionally trigger new random fireworks if victory is active
+            if (Math.random() < 0.05) {
+                createExplosion(
+                    Math.random() * canvas.width, 
+                    (Math.random() * canvas.height) * 0.5 // Keep mainly in upper half
+                );
+            }
+
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.update();
+                p.draw();
+                if (p.life <= 0) {
+                    particles.splice(i, 1);
+                }
+            }
+            animationId = requestAnimationFrame(animateFireworks);
+        }
+
+        function startFireworks() {
+            // Initial big explosions
+            createExplosion(canvas.width * 0.2, canvas.height * 0.3);
+            createExplosion(canvas.width * 0.5, canvas.height * 0.2);
+            createExplosion(canvas.width * 0.8, canvas.height * 0.3);
+            animateFireworks();
+        }
+
+        // Start the game initially
+        initGame();
+
+    </script>
+</body>
+</html>

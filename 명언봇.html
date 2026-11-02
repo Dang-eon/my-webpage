@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>마음 토닥 - 감정별 명언 추천</title>
+    <style>
+        :root {
+            --bg-color: #f8f9fa;
+            --container-bg: #ffffff;
+            --text-main: #333333;
+            --text-sub: #666666;
+            --primary: #ff8fa3;
+            --primary-hover: #ff748c;
+            --btn-happy: #ffd166;
+            --btn-sad: #4ea8de;
+            --btn-burnout: #a7c957;
+            --btn-stress: #9d4edd;
+        }
+
+        * {
+            box-sizing: border-box;
+            font-family: 'Pretendard', 'Noto Sans KR', sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        #app-container {
+            background-color: var(--container-bg);
+            width: 100%;
+            max-width: 480px;
+            min-height: 100vh;
+            box-shadow: 0 0 20px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        header {
+            text-align: center;
+            padding: 24px 20px;
+            border-bottom: 1px solid #eee;
+            position: relative;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            color: var(--text-main);
+        }
+
+        .manage-btn-top {
+            position: absolute;
+            right: 20px;
+            top: 24px;
+            background: none;
+            border: none;
+            color: var(--text-sub);
+            cursor: pointer;
+            font-size: 0.9rem;
+            text-decoration: underline;
+        }
+
+        .view-section {
+            display: none;
+            flex: 1;
+            padding: 30px 20px;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .view-section.active {
+            display: flex;
+        }
+
+        /* Home View */
+        .emotion-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        .emotion-btn {
+            padding: 24px 16px;
+            border: none;
+            border-radius: 16px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #fff;
+            cursor: pointer;
+            transition: transform 0.2s, opacity 0.2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .emotion-btn:hover {
+            opacity: 0.9;
+            transform: scale(0.98);
+        }
+
+        .emotion-btn .emoji { font-size: 2rem; }
+        .btn-happy { background-color: var(--btn-happy); color: #333; }
+        .btn-sad { background-color: var(--btn-sad); }
+        .btn-burnout { background-color: var(--btn-burnout); color: #333; }
+        .btn-stress { background-color: var(--btn-stress); }
+
+        /* Quote View */
+        .quote-category-title {
+            font-size: 1.2rem;
+            color: var(--text-sub);
+            margin-bottom: 40px;
+        }
+
+        .quote-card {
+            background-color: #fdfbf7;
+            padding: 40px 20px;
+            border-radius: 20px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            margin-bottom: 40px;
+        }
+
+        .quote-text {
+            font-size: 1.4rem;
+            line-height: 1.6;
+            font-weight: bold;
+            margin-bottom: 20px;
+            word-break: keep-all;
+        }
+
+        .quote-author {
+            font-size: 1rem;
+            color: var(--text-sub);
+        }
+
+        .action-btns {
+            display: flex;
+            gap: 12px;
+            width: 100%;
+        }
+
+        .action-btn {
+            flex: 1;
+            padding: 16px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        .btn-next { background-color: var(--primary); color: #fff; }
+        .btn-back { background-color: #e9ecef; color: var(--text-main); }
+        .action-btn:hover { opacity: 0.9; }
+
+        /* Manage View */
+        .manage-controls {
+            width: 100%;
+            margin-bottom: 20px;
+        }
+
+        .add-form {
+            background: #f1f3f5;
+            padding: 16px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .add-form select, .add-form input {
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+
+        .btn-add {
+            background-color: var(--primary);
+            color: white;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor:
