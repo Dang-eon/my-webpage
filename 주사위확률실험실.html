@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>주사위 확률 실험실</title>
+<style>
+:root{--bg:#f5f6fa;--card:#fff;--text:#1d2230;--sub:#667085;--line:#e3e6ee;--accent:#4f6df5;--bar:#4f6df5;--ref:#e5484d;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#12141b;--card:#1c1f2a;--text:#eceef5;--sub:#9aa3b5;--line:#2c3040;--accent:#7b93ff;--bar:#7b93ff;--ref:#ff7b80;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#12141b;--card:#1c1f2a;--text:#eceef5;--sub:#9aa3b5;--line:#2c3040;--accent:#7b93ff;--bar:#7b93ff;--ref:#ff7b80;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Apple SD Gothic Neo","Noto Sans KR",sans-serif}
+header{padding:18px 20px 4px;max-width:1100px;margin:auto}
+h1{margin:0;font-size:22px}
+header p{margin:4px 0 0;color:var(--sub);font-size:14px}
+main{max-width:1100px;margin:auto;padding:12px 20px 28px;display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:800px){main{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px}
+#stage{height:300px;position:relative;overflow:hidden;padding:0}
+#stage canvas{width:100%;height:100%;display:block}
+#badge{position:absolute;left:12px;top:10px;font-size:14px;color:var(--sub)}
+#badge b{font-size:28px;color:var(--text);margin-left:6px}
+.btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;align-items:center}
+button{font:inherit;border:1px solid var(--line);background:var(--card);color:var(--text);padding:9px 14px;border-radius:10px;cursor:pointer}
+button.p{background:var(--accent);border-color:var(--accent);color:#fff}
+button.d{color:var(--ref)}
+button:disabled{opacity:.5;cursor:default}
+input{font:inherit;width:90px;padding:9px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--text)}
+.sum{margin-top:10px;font-size:14px;color:var(--sub)}
+#recent{margin-top:6px;font-size:14px;min-height:20px;word-break:break-all}
+.wide{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:14px;min-width:360px}
+th,td{padding:7px 6px;text-align:center;border-bottom:1px solid var(--line)}
+th{color:var(--sub);font-weight:600}
+tfoot td{font-weight:700;border-bottom:none}
+#chart{width:100%;height:260px;display:block}
+h2{margin:0 0 8px;font-size:15px}
+.full{grid-column:1/-1}
+html:root:root:root{--bg:#0b0d14;--card:#141824;--text:#eef1f8;--sub:#8b94ab;--line:#262c3d;--accent:#6c8bff;--bar:#6c8bff;--ref:#ff6b72;color-scheme:dark}
+body{background:radial-gradient(1200px 600px at 50% -10%,#1a2040 0,var(--bg) 60%) fixed,var(--bg)}
+header{padding-top:28px}
+h1{font-size:26px;letter-spacing:-.02em;font-weight:700}
+.card{border-radius:18px;border:1px solid var(--line);box-shadow:0 8px 30px rgba(0,0,0,.35)}
+#stage{height:340px;border:1px solid #2a3150;background:radial-gradient(circle at 50% 35%,#2a3358 0,#0d1020 75%)}
+#badge{top:14px;left:16px;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--sub)}
+#badge b{display:block;margin:2px 0 0;font-size:44px;line-height:1;font-weight:700;color:#fff}
+button{border-radius:12px;padding:10px 16px;font-weight:600;background:#1c2233;transition:transform .1s,background .15s}
+button:hover:not(:disabled){background:#252d45}
+button:active:not(:disabled){transform:scale(.97)}
+button.p{background:linear-gradient(135deg,#5b7bff,#7a5cff);border:none;color:#fff}
+button.p:hover:not(:disabled){filter:brightness(1.1);background:linear-gradient(135deg,#5b7bff,#7a5cff)}
+button.d{border-color:#4a2a30}
+input{background:#0f1320;border-radius:12px}
+th{font-size:12px;letter-spacing:.06em}
+.sum b{color:var(--text);font-size:16px}
+#recent{color:var(--text);opacity:.85}
+button,input{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+input{font-size:16px}
+@media(max-width:800px){#stage{height:300px}}
+@media(max-width:520px){header{padding:20px 14px 0}h1{font-size:22px}header p{font-size:13px}main{padding:12px 14px 24px;gap:12px}.card{padding:12px}#stage{height:250px}#badge b{font-size:36px}.btns button,.btns input{flex:1 1 30%;min-width:0;width:auto;padding:12px 8px}#goCustom{flex:1 1 30%}#reset{flex:1 1 100%}#chart{height:220px}}
+</style>
+</head>
+<body>
+<header><h1>🎲 주사위 확률 실험실</h1><p>주사위를 굴려 각 눈이 나오는 빈도를 모으고, 이론 확률(1/6 ≈ 16.67%)과 비교해 보세요.</p></header>
+<main>
+<section class="card" style="padding:14px">
+<div class="card" id="stage"><div id="badge">결과<b id="face">-</b></div></div>
+<div class="btns">
+<button class="p" data-n="1">1회</button>
+<button class="p" data-n="10">10회</button>
+<button class="p" data-n="100">100회</button>
+<input id="custom" type="number" min="1" max="100000" value="1000" aria-label="사용자 지정 횟수">
+<button class="p" id="goCustom">굴리기</button>
+<button class="d" id="reset">초기화</button>
+</div>
+<div class="sum">총 실행 횟수: <b id="total">0</b>회 (사용자 지정은 최대 100,000회)</div>
+<div id="recent"></div>
+</section>
+<section class="card">
+<h2>각 눈의 출현 빈도표</h2>
+<div class="wide"><table>
+<thead><tr><th>눈</th><th>횟수</th><th>백분율</th><th>이론값과 차이</th></tr></thead>
+<tbody id="tb"></tbody>
+<tfoot><tr><td>합계</td><td id="tc">0</td><td id="tp">0%</td><td></td></tr></tfoot>
+</table></div>
+</section>
+<section class="card full">
+<h2>백분율 막대그래프 <span style="font-weight:400;color:var(--sub);font-size:13px">(점선: 이론 확률 16.67%)</span></h2>
+<canvas id="chart"></canvas>
+</section>
+</main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function(){
+var counts=[0,0,0,0,0,0],total=0,busy=false,last=[];
+var cs=getComputedStyle(document.documentElement);
+function css(v){return getComputedStyle(document.documentElement).getPropertyValue(v).trim()}
+
+/* ---------- 3D ---------- */
+var stage=document.getElementById('stage');
+var scene=new THREE.Scene();
+var cam=new THREE.PerspectiveCamera(40,1,.1,100);cam.position.set(0,4.2,6.2);cam.lookAt(0,.6,0);
+var rd=new THREE.WebGLRenderer({antialias:true,alpha:true});
+rd.setPixelRatio(Math.min(devicePixelRatio,2));
+rd.shadowMap.enabled=true;
+stage.appendChild(rd.domElement);
+scene.add(new THREE.AmbientLight(0xffffff,.65));
+var dl=new THREE.DirectionalLight(0xffffff,.8);dl.position.set(3,6,4);dl.castShadow=true;scene.add(dl);
+var floor=new THREE.Mesh(new THREE.PlaneGeometry(20,20),new THREE.ShadowMaterial({opacity:.25}));
+floor.rotation.x=-Math.PI/2;floor.receiveShadow=true;scene.add(floor);
+
+function faceTex(n){
+  var c=document.createElement('canvas');c.width=c.height=128;var g=c.getContext('2d');
+  g.fillStyle='#fafafa';g.fillRect(0,0,128,128);
+  g.strokeStyle='#ddd';g.lineWidth=4;g.strokeRect(2,2,124,124);
+  var P={1:[[1,1]],2:[[0,0],[2,2]],3:[[0,0],[1,1],[2,2]],4:[[0,0],[2,0],[0,2],[2,2]],5:[[0,0],[2,0],[1,1],[0,2],[2,2]],6:[[0,0],[2,0],[0,1],[2,1],[0,2],[2,2]]};
+  P[n].forEach(function(p){g.beginPath();g.arc(32+p[0]*32,32+p[1]*32,10,0,7);g.fillStyle=n===1?'#e5484d':'#222';g.fill()});
+  var t=new THREE.CanvasTexture(c);return t;
+}
+/* BoxGeometry 면 순서: +x,-x,+y,-y,+z,-z */
+var order=[3,4,1,6,2,5];
+var normals={3:[1,0,0],4:[-1,0,0],1:[0,1,0],6:[0,-1,0],2:[0,0,1],5:[0,0,-1]};
+var mats=order.map(function(n){return new THREE.MeshStandardMaterial({map:faceTex(n),roughness:.4})});
+var die=new THREE.Mesh(new THREE.BoxGeometry(1.6,1.6,1.6),mats);
+die.castShadow=true;die.position.y=.8;scene.add(die);
+
+function resize(){var w=stage.clientWidth,h=stage.clientHeight;rd.setSize(w,h,false);cam.aspect=w/h;cam.updateProjectionMatrix()}
+addEventListener('resize',function(){resize();drawChart()});resize();
+
+var anim=null;
+function ease(t){return 1-Math.pow(1-t,3)}
+function rollDie(result,dur,done){
+  var n=normals[result];
+  var qt=new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(n[0],n[1],n[2]),new THREE.Vector3(0,1,0));
+  qt.premultiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),Math.random()*Math.PI*2));
+  var q0=die.quaternion.clone(),ax=new THREE.Vector3(Math.random()-.5,Math.random()-.5,Math.random()-.5).normalize();
+  var spins=2+Math.random()*2,t0=performance.now();
+  anim=function(now){
+    var p=Math.min((now-t0)/dur,1),e=ease(p);
+    var base=q0.clone().slerp(qt,e);
+    var ex=new THREE.Quaternion().setFromAxisAngle(ax,(1-e)*spins*Math.PI*2);
+    die.quaternion.copy(ex.multiply(base));
+    var b=Math.abs(Math.sin(p*Math.PI*3))*(1-p)*2.2;
+    die.position.y=.8+b;
+    if(p>=1){anim=null;done&&done()}
+  };
+}
+function loop(now){if(anim)anim(now);rd.render(scene,cam);requestAnimationFrame(loop)}
+requestAnimationFrame(loop);
+
+/* ---------- 통계 ---------- */
+var tb=document.getElementById('tb');
+for(var i=0;i<6;i++){tb.insertAdjacentHTML('beforeend','<tr><td>'+(i+1)+'</td><td></td><td></td><td></td></tr>')}
+function render(){
+  var rows=tb.rows;
+  for(var i=0;i<6;i++){
+    var pc=total?counts[i]/total*100:0,df=total?pc-100/6:0;
+    rows[i].cells[1].textContent=counts[i].toLocaleString();
+    rows[i].cells[2].textContent=pc.toFixed(2)+'%';
+    rows[i].cells[3].textContent=total?(df>=0?'+':'')+df.toFixed(2)+'%p':'-';
+  }
+  document.getElementById('total').textContent=total.toLocaleString();
+  document.getElementById('tc').textContent=total.toLocaleString();
+  document.getElementById('tp').textContent=total?'100%':'0%';
+  drawChart();
+}
+var cv=document.getElementById('chart');
+function drawChart(){
+  var dpr=Math.min(devicePixelRatio||1,2),W=cv.clientWidth,H=cv.clientHeight;
+  cv.width=W*dpr;cv.height=H*dpr;
+  var g=cv.getContext('2d');g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,W,H);
+  var L=40,R=10,T=22,B=28,cw=W-L-R,ch=H-T-B;
+  var pcs=counts.map(function(c){return total?c/total*100:0});
+  var mx=Math.max(30,Math.ceil(Math.max.apply(null,pcs)/5)*5+5);
+  g.font='12px system-ui,sans-serif';g.textAlign='right';g.textBaseline='middle';
+  for(var v=0;v<=mx;v+=mx>40?10:5){
+    var y=T+ch-v/mx*ch;g.strokeStyle=css('--line');g.beginPath();g.moveTo(L,y);g.lineTo(W-R,y);g.stroke();
+    g.fillStyle=css('--sub');g.fillText(v+'%',L-6,y);
+  }
+  var bw=cw/6;
+  pcs.forEach(function(p,i){
+    var h=p/mx*ch,x=L+i*bw+bw*.2;
+    g.fillStyle=css('--bar');g.fillRect(x,T+ch-h,bw*.6,h);
+    g.fillStyle=css('--text');g.textAlign='center';g.textBaseline='bottom';
+    g.fillText(p.toFixed(1)+'%',x+bw*.3,T+ch-h-3);
+    g.textBaseline='top';g.fillStyle=css('--sub');g.fillText(String(i+1),x+bw*.3,T+ch+7);
+  });
+  var ry=T+ch-(100/6)/mx*ch;
+  g.setLineDash([6,4]);g.strokeStyle=css('--ref');g.lineWidth=1.5;g.beginPath();g.moveTo(L,ry);g.lineTo(W-R,ry);g.stroke();
+  g.setLineDash([]);g.lineWidth=1;
+}
+
+/* ---------- 실행 ---------- */
+var btns=document.querySelectorAll('button');
+function setBusy(b){busy=b;btns.forEach(function(x){if(x.id!=='reset')x.disabled=b});document.getElementById('custom').disabled=b}
+function run(n){
+  if(busy||!(n>=1))return;
+  n=Math.min(Math.floor(n),100000);
+  setBusy(true);
+  var results=[],i0=0,start=performance.now(),dur=n<=10?900:1400;
+  var step=Math.max(1,Math.ceil(n/60));
+  var finalVal=Math.floor(Math.random()*6)+1;
+  function tick(){
+    var end=Math.min(i0+step,n);
+    for(;i0<end;i0++){var r=(i0===n-1)?finalVal-1:Math.floor(Math.random()*6);counts[r]++;total++;if(n<=30)results.push(r+1)}
+    render();
+    if(i0<n){requestAnimationFrame(tick)}
+  }
+  tick();
+  rollDie(finalVal,dur,function(){
+    document.getElementById('face').textContent=finalVal;
+    last=n<=30?results:[finalVal];
+    document.getElementById('recent').textContent=(n<=30?'이번 결과: ':'마지막 결과: ')+last.join(', ');
+    setBusy(false);
+  });
+  document.getElementById('face').textContent='…';
+}
+document.querySelectorAll('button[data-n]').forEach(function(b){b.onclick=function(){run(+b.dataset.n)}});
+document.getElementById('goCustom').onclick=function(){run(+document.getElementById('custom').value)};
+document.getElementById('reset').onclick=function(){
+  counts=[0,0,0,0,0,0];total=0;last=[];
+  document.getElementById('face').textContent='-';
+  document.getElementById('recent').textContent='';
+  die.quaternion.set(0,0,0,1);die.position.y=.8;anim=null;setBusy(false);render();
+};
+render();
+})();
+</script>
+</body>
+</html>

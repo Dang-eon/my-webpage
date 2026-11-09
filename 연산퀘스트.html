@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#6657d9">
+<title>연산 퀘스트 | 즐겁게 계산하고 레벨업!</title>
+<style>
+:root{--ink:#25233a;--muted:#77758d;--purple:#6657d9;--purple2:#8b7cf6;--bg:#f5f4ff;--card:#fff;--line:#e9e7f5;--green:#24a879;--red:#e45e72;--yellow:#ffcb55;--shadow:0 12px 34px #342a7712}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Noto Sans KR",sans-serif}button,input{font:inherit}button{cursor:pointer;border:0}.app{max-width:1120px;margin:auto;padding:24px 22px 60px}.top{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:24px}.brand{display:flex;align-items:center;gap:12px}.logo{width:48px;height:48px;border-radius:16px;background:linear-gradient(135deg,var(--purple),#a08eff);display:grid;place-items:center;color:#fff;font-size:25px;box-shadow:0 8px 20px #6657d944}.brand h1{font-size:23px;margin:0}.brand p{margin:2px 0 0;color:var(--muted);font-size:13px}.profile{display:flex;align-items:center;gap:15px;background:linear-gradient(135deg,#fff,#f5f2ff);padding:13px 18px;border:2px solid #ded8ff;border-radius:19px;box-shadow:0 8px 22px #6657d91c;min-width:270px}.avatar{width:48px;height:48px;background:#fff0c9;border-radius:15px;display:grid;place-items:center;font-size:22px}.profile strong{display:block;font-size:19px;color:#4437a8}.profile small{color:var(--muted);font-size:13px;font-weight:700}.xpbar{width:160px;height:11px;background:#e7e2ff;border-radius:10px;overflow:hidden;margin-top:8px}.xpbar span{display:block;height:100%;background:linear-gradient(90deg,#6657d9,#ad9eff);width:0%;border-radius:10px;transition:width .35s}.xp-caption{display:flex;justify-content:space-between;gap:12px;margin-top:4px;font-size:12px;color:#6657d9;font-weight:800}
+.hero{background:linear-gradient(115deg,#6556d8,#8b7cf6);color:#fff;border-radius:24px;padding:26px 30px;display:flex;align-items:center;justify-content:space-between;gap:20px;box-shadow:0 15px 30px #6657d92c}.hero h2{font-size:25px;margin:0 0 7px}.hero p{margin:0;color:#eeebff}.hero .mascot{font-size:62px;filter:drop-shadow(0 8px 8px #352a6a44)}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:18px 0 25px}.stat,.panel{background:var(--card);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow)}.stat{padding:16px 18px}.stat .label{font-size:12px;color:var(--muted)}.stat strong{display:block;font-size:24px;margin-top:5px}.stat em{font-style:normal;font-size:12px;color:var(--green)}.layout{display:grid;grid-template-columns:1.1fr .9fr;gap:18px}.panel{padding:22px}.section-title{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}.section-title h3{margin:0;font-size:18px}.section-title span{font-size:12px;color:var(--muted)}.modes{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.mode{border:1.5px solid var(--line);background:#fff;border-radius:15px;padding:15px;text-align:left;transition:.18s}.mode:hover,.mode.active{border-color:var(--purple);background:#f7f5ff;transform:translateY(-2px)}.mode .emoji{font-size:25px}.mode strong{display:block;margin:7px 0 3px}.mode small{color:var(--muted);line-height:1.4}.settings{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}.pill{background:#f3f1fc;border:1px solid #e9e5fa;color:#625b88;padding:8px 13px;border-radius:999px;font-size:13px}.pill.selected{background:var(--purple);color:#fff;border-color:var(--purple)}.setting-label{font-size:13px;font-weight:700;margin:18px 0 8px}.start{width:100%;margin-top:22px;padding:14px;background:var(--purple);color:#fff;border-radius:13px;font-weight:800;font-size:16px;box-shadow:0 8px 18px #6657d933}.start:hover{background:#5748c7}.badge-list{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.badge-item{background:#faf9ff;border:1px solid var(--line);border-radius:13px;padding:12px 7px;text-align:center;opacity:.48}.badge-item.earned{opacity:1;background:#fff9e8;border-color:#ffe4a3}.badge-item .medal{font-size:27px}.badge-item strong{display:block;font-size:11px;margin-top:5px}.badge-item small{font-size:10px;color:var(--muted)}.chart{height:140px;display:flex;align-items:end;gap:12px;padding:15px 8px 0;border-bottom:1px solid var(--line)}.bar-wrap{flex:1;height:100%;display:flex;flex-direction:column;justify-content:end;align-items:center;gap:6px}.bar{width:min(34px,80%);min-height:3px;background:linear-gradient(#9c8eff,var(--purple));border-radius:7px 7px 2px 2px}.bar-wrap small{font-size:10px;color:var(--muted)}.chart-legend{display:flex;justify-content:space-around;margin-top:12px;font-size:11px;color:var(--muted)}.chart-legend b{color:var(--ink)}
+/* game overlay */
+.overlay{position:fixed;inset:0;background:#211d3dcc;display:none;align-items:center;justify-content:center;padding:16px;z-index:5}.overlay.show{display:flex}.game{width:min(590px,100%);background:#fff;border-radius:24px;padding:25px;box-shadow:0 25px 80px #0004}.game-top{display:flex;justify-content:space-between;align-items:center}.game-top h2{font-size:18px;margin:0}.close{background:#f2f0f8;border-radius:10px;padding:8px 11px}.game-meta{display:flex;justify-content:space-between;align-items:center;color:var(--muted);font-size:13px;margin:18px 0 10px;gap:8px}.time{display:inline-flex;align-items:center;justify-content:center;gap:7px;background:#fff0d5;color:#a85a00;border:2px solid #ffd58a;border-radius:14px;padding:9px 17px;font-size:22px;font-weight:900;min-width:105px;box-shadow:0 4px 12px #f4a43a22;font-variant-numeric:tabular-nums}.time::before{content:'⏳';font-size:18px}.time.urgent{background:#ffe5e9;border-color:#ff9aaa;color:#c62d4b;animation:timerPulse .7s infinite alternate}@keyframes timerPulse{to{transform:scale(1.06);box-shadow:0 0 0 5px #ff9aaa33}}.progress{height:8px;background:#efedf7;border-radius:9px;overflow:hidden}.progress span{display:block;height:100%;background:var(--purple);width:0%;transition:.2s}.question{text-align:center;padding:35px 0 22px}.question small{color:var(--muted)}.question h2{font-size:clamp(38px,8vw,54px);margin:10px 0}.answer-row{display:flex;gap:10px;max-width:340px;margin:auto}.answer-row input{min-width:0;flex:1;border:2px solid var(--line);border-radius:13px;padding:13px;text-align:center;font-size:22px;outline:none}.answer-row input:focus{border-color:var(--purple)}.answer-row button{background:var(--purple);color:#fff;border-radius:13px;padding:0 22px;font-weight:800}.feedback{height:30px;text-align:center;font-weight:700;margin:13px 0 0}.feedback.good{color:var(--green)}.feedback.bad{color:var(--red)}.game-bottom{display:flex;justify-content:space-between;align-items:center;margin-top:14px;color:var(--muted);font-size:12px}.result{text-align:center;padding:22px 5px}.result .big{font-size:60px}.result h2{font-size:27px;margin:8px 0}.result p{color:var(--muted)}.result-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:22px 0}.result-grid div{background:#f7f6fc;padding:13px 5px;border-radius:12px}.result-grid strong{display:block;font-size:21px}.result-grid small{color:var(--muted)}.result button{background:var(--purple);color:#fff;padding:13px 28px;border-radius:12px;font-weight:800}.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(20px);background:#29263e;color:white;padding:12px 18px;border-radius:12px;opacity:0;pointer-events:none;transition:.25s;z-index:9}.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+@media(max-width:760px){.app{padding:17px 14px 40px}.top{align-items:flex-start}.profile{padding:9px 11px;min-width:0;gap:9px}.profile .xpbar{width:110px}.avatar{width:40px;height:40px}.profile strong{font-size:16px}.hero{padding:22px}.hero h2{font-size:21px}.hero .mascot{font-size:48px}.stats{grid-template-columns:repeat(2,1fr);gap:9px}.stat{padding:13px}.stat strong{font-size:21px}.layout{grid-template-columns:1fr}.panel{padding:18px}}@media(max-width:420px){.top{flex-wrap:wrap}.profile{width:100%;justify-content:flex-start}.profile .xpbar{width:min(190px,48vw)}.brand h1{font-size:19px}.brand p{font-size:11px}.profile small{font-size:10px}.modes{gap:8px}.mode{padding:12px}.badge-list{gap:6px}}
+</style>
+</head>
+<body>
+<div class="app">
+<header class="top">
+ <div class="brand"><div class="logo">＋</div><div><h1>연산 퀘스트</h1><p>즐겁게 계산하고, 매일 레벨업!</p></div></div>
+ <div class="profile"><div class="avatar">🧑‍🚀</div><div><strong id="levelText">Lv. 1 꼬마 탐험가</strong><small><span id="xpText">0</span> / 100 XP</small><div class="xpbar"><span id="xpFill"></span></div><div class="xp-caption"><span>다음 레벨까지</span><span id="xpRemain">100 XP 남음</span></div></div></div>
+</header>
+<section class="hero"><div><h2>오늘의 계산 미션에 도전해 볼까요?</h2><p>문제를 풀수록 경험치가 쌓이고 새로운 배지가 열려요.</p></div><div class="mascot">🚀</div></section>
+<section class="stats">
+ <div class="stat"><div class="label">오늘 푼 문제</div><strong id="todayCount">0개</strong><em>오늘도 한 걸음!</em></div>
+ <div class="stat"><div class="label">이번 주 풀이</div><strong id="weekCount">0개</strong><em>꾸준함이 실력이 돼요</em></div>
+ <div class="stat"><div class="label">전체 풀이</div><strong id="totalCount">0개</strong><em>나의 누적 기록</em></div>
+ <div class="stat"><div class="label">연속 학습</div><strong id="streakCount">0일 🔥</strong><em>매일 도전해요</em></div>
+</section>
+<div class="layout">
+ <section class="panel">
+  <div class="section-title"><h3>🎮 게임 모드 선택</h3><span>원하는 모드를 골라요</span></div>
+  <div class="modes">
+   <button class="mode active" data-mode="timed"><span class="emoji">⏱️</span><strong>타임어택</strong><small>60초 동안 최대한 많은 문제에 도전!</small></button>
+   <button class="mode" data-mode="infinite"><span class="emoji">🌱</span><strong>무한모드</strong><small>시간 제한 없이 차근차근 연습해요.</small></button>
+   <button class="mode" data-mode="challenge"><span class="emoji">🏆</span><strong>챌린지</strong><small>10문제 연속 정답으로 레벨업!</small></button>
+   <button class="mode" data-mode="master"><span class="emoji">👑</span><strong>마스터전</strong><small>혼합 연산 5문제를 모두 클리어!</small></button>
+  </div>
+  <div class="setting-label">연산 종류</div><div class="settings" id="ops">
+   <button class="pill selected" data-op="add">덧셈 +</button><button class="pill" data-op="sub">뺄셈 −</button><button class="pill" data-op="mul">곱셈 ×</button><button class="pill" data-op="div">나눗셈 ÷</button><button class="pill" data-op="mix">혼합 연산</button>
+  </div>
+  <div class="setting-label">난이도</div><div class="settings" id="levels">
+   <button class="pill selected" data-level="1">초급 · 1~10</button><button class="pill" data-level="2">중급 · 1~50</button><button class="pill" data-level="3">고급 · 1~100</button>
+  </div>
+  <button class="start" id="startBtn">🚀 게임 시작하기</button>
+ </section>
+ <div style="display:grid;gap:18px;align-content:start">
+  <section class="panel"><div class="section-title"><h3>🏅 도전과제 & 업적</h3><span id="badgeCount">0 / 5 획득</span></div><div class="badge-list" id="badges"></div></section>
+  <section class="panel"><div class="section-title"><h3>📊 나의 연산 기록</h3><span>전체 정답 기준</span></div><div class="chart" id="chart"></div><div class="chart-legend" id="legend"></div><div style="display:flex;justify-content:space-between;margin-top:18px;font-size:13px"><span style="color:var(--muted)">개인 최고 기록</span><b id="bestRecord">아직 기록이 없어요</b></div></section>
+ </div>
+</div>
+</div>
+<div class="overlay" id="overlay"><section class="game" id="gamePanel"></section></div><div class="toast" id="toast"></div>
+<script>
+(()=>{
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const today=()=>new Date().toISOString().slice(0,10);
+const load=()=>{try{return JSON.parse(localStorage.getItem('arithmeticQuestV1'))||{xp:0,total:0,days:{},ops:{add:0,sub:0,mul:0,div:0},best:0,streak:0,lastDay:null,badges:[]}}catch(e){return {xp:0,total:0,days:{},ops:{add:0,sub:0,mul:0,div:0},best:0,streak:0,lastDay:null,badges:[]}}};
+let data=load(),mode='timed',op='add',level=1,game=null,timer=null;
+let audioCtx=null;
+function playSound(correct){
+ try{
+  audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();
+  if(audioCtx.state==='suspended')audioCtx.resume();
+  const now=audioCtx.currentTime, osc=audioCtx.createOscillator(), gain=audioCtx.createGain();
+  osc.connect(gain);gain.connect(audioCtx.destination);
+  if(correct){osc.type='sine';osc.frequency.setValueAtTime(660,now);osc.frequency.setValueAtTime(880,now+.09);gain.gain.setValueAtTime(.0001,now);gain.gain.exponentialRampToValueAtTime(.16,now+.02);gain.gain.exponentialRampToValueAtTime(.0001,now+.22);osc.start(now);osc.stop(now+.23)}
+  else{osc.type='triangle';osc.frequency.setValueAtTime(240,now);osc.frequency.exponentialRampToValueAtTime(150,now+.18);gain.gain.setValueAtTime(.0001,now);gain.gain.exponentialRampToValueAtTime(.13,now+.02);gain.gain.exponentialRampToValueAtTime(.0001,now+.24);osc.start(now);osc.stop(now+.25)}
+ }catch(e){}
+}
+const save=()=>localStorage.setItem('arithmeticQuestV1',JSON.stringify(data));
+const names={add:'덧셈',sub:'뺄셈',mul:'곱셈',div:'나눗셈'};
+const badges=[['first','🌟','첫걸음','첫 문제를 풀었어요'],['timed','⏱️','타임어택 마스터','타임어택 오답 없이 완료'],['master','👑','계산의 신','마스터전 오답 없이 완료'],['speed','⚡','스피드 러너','30초 이내 챌린지 완료'],['streak','🔥','꾸준한 탐험가','3일 연속 학습']];
+function toast(t){let el=$('#toast');el.textContent=t;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),2100)}
+function render(){
+ let d=today(),weekStart=new Date();weekStart.setDate(weekStart.getDate()-6);
+ let todayN=data.days[d]?.count||0,week=Object.entries(data.days).filter(([k])=>new Date(k+'T00:00:00')>=weekStart).reduce((a,[,v])=>a+v.count,0);
+ $('#todayCount').textContent=todayN+'개';$('#weekCount').textContent=week+'개';$('#totalCount').textContent=data.total+'개';$('#streakCount').textContent=data.streak+'일 🔥';
+ let lv=Math.floor(data.xp/100)+1,xp=data.xp%100;$('#levelText').textContent=`Lv. ${lv} ${lv<3?'꼬마 탐험가':lv<6?'용감한 계산가':'연산 마스터'}`;$('#xpText').textContent=xp;$('#xpFill').style.width=xp+'%';$('#xpRemain').textContent=(100-xp)+' XP 남음';
+ $('#badges').innerHTML=badges.map(([id,em,n,desc])=>`<div class="badge-item ${data.badges.includes(id)?'earned':''}"><div class="medal">${em}</div><strong>${n}</strong><small>${data.badges.includes(id)?'획득 완료':desc}</small></div>`).join('');$('#badgeCount').textContent=data.badges.length+' / 5 획득';
+ let vals=['add','sub','mul','div'].map(k=>data.ops[k]||0),max=Math.max(1,...vals);$('#chart').innerHTML=vals.map((v,i)=>`<div class="bar-wrap"><div class="bar" style="height:${Math.max(3,v/max*100)}%"></div><small>${v}</small></div>`).join('');$('#legend').innerHTML=['+ 덧셈','− 뺄셈','× 곱셈','÷ 나눗셈'].map(x=>`<span>${x}</span>`).join('');$('#bestRecord').textContent=data.best?data.best+'문제 / 60초':'아직 기록이 없어요';
+}
+function award(id,msg){if(!data.badges.includes(id)){data.badges.push(id);toast('🏅 업적 획득! '+msg)}}
+function updateDay(){let d=today();if(data.lastDay!==d){let y=new Date();y.setDate(y.getDate()-1);let yd=y.toISOString().slice(0,10);data.streak=data.lastDay===yd?data.streak+1:1;data.lastDay=d}if(!data.days[d])data.days[d]={count:0};}
+function makeQuestion(){
+ let max=level===1?10:level===2?50:100,which=op==='mix'?['add','sub','mul','div'][Math.floor(Math.random()*4)]:op;
+ let a,b,ans,sym;
+ if(which==='mul'){a=Math.floor(Math.random()*max)+1;b=Math.floor(Math.random()*9)+1;ans=a*b;sym='×'}
+ else if(which==='div'){b=Math.floor(Math.random()*9)+1;ans=Math.floor(Math.random()*max)+1;a=b*ans;sym='÷'}
+ else {a=Math.floor(Math.random()*max)+1;b=Math.floor(Math.random()*max)+1;if(which==='sub'&&b>a)[a,b]=[b,a];ans=which==='add'?a+b:a-b;sym=which==='add'?'+':'−'}
+ return {a,b,ans,sym,which};
+}
+function start(){
+ clearInterval(timer);game={mode,score:0,correct:0,wrong:0,streak:0,answered:0,started:Date.now(),remaining:mode==='timed'?60:null,target:mode==='master'?5:mode==='challenge'?10:Infinity,question:makeQuestion(),locked:false};
+ $('#overlay').classList.add('show');showGame();
+ if(mode==='timed'){timer=setInterval(()=>{game.remaining--;if(game.remaining<=0)finish();else{let t=$('.time');t.textContent=game.remaining+'초';if(game.remaining<=10)t.classList.add('urgent')}},1000)}
+}
+function showGame(){
+ let title={timed:'⏱️ 타임어택',infinite:'🌱 무한모드',challenge:'🏆 챌린지',master:'👑 마스터전'}[mode];
+ $('#gamePanel').innerHTML=`<div class="game-top"><h2>${title}</h2><button class="close" id="closeGame">나가기 ✕</button></div><div class="game-meta"><span class="time">${game.remaining===null?'시간 제한 없음':game.remaining+'초'}</span><span class="counter">${game.mode==='infinite'?'풀이 '+game.answered+'문제':game.answered+'/'+game.target+' 문제'}</span><span>⭐ ${game.score}점</span></div><div class="progress"><span style="width:${game.mode==='infinite'?0:game.answered/game.target*100}%"></span></div><div class="question"><small>정답을 입력해 주세요</small><h2>${game.question.a} ${game.question.sym} ${game.question.b} = ?</h2></div><form class="answer-row" id="answerForm"><input id="answer" type="number" inputmode="numeric" autocomplete="off" placeholder="정답" required autofocus><button type="submit">확인</button></form><div class="feedback" id="feedback" aria-live="polite"></div><div class="game-bottom"><span>🔥 연속 정답 <b id="streak">${game.streak}</b></span><span>정답 +10점 · 연속 정답 보너스</span></div>`;
+ $('#closeGame').onclick=()=>{if(confirm('게임을 종료할까요?'))finish(true)};$('#answerForm').onsubmit=e=>{e.preventDefault();answer()};$('#answer').focus();
+}
+function answer(){
+ if(game.locked)return;let val=Number($('#answer').value);if($('#answer').value.trim()==='')return;
+ game.locked=true;game.answered++;let good=val===game.question.ans,fb=$('#feedback');if(!good){data.ops[game.question.which]=(data.ops[game.question.which]||0)+0;}
+ playSound(good);if(good){data.ops[game.question.which]=(data.ops[game.question.which]||0)+1;game.correct++;game.streak++;let bonus=Math.min( game.streak-1,5)*2;game.score+=10+bonus;fb.textContent=game.streak>1?`정답이에요! +${10+bonus}점 (연속 정답 보너스)`:'정답이에요! +10점';fb.className='feedback good'}
+ else{game.wrong++;game.streak=0;fb.textContent=`아쉬워요! 정답은 ${game.question.ans}이에요.`;fb.className='feedback bad'}
+ $('#streak').textContent=game.streak;$('.counter').textContent=game.mode==='infinite'?'풀이 '+game.answered+'문제':game.answered+'/'+game.target+' 문제';$('.progress span').style.width=(game.mode==='infinite'?0:game.answered/game.target*100)+'%';
+ setTimeout(()=>{if(!game)return;if(game.mode==='challenge'&&!good){finish();return}if(game.mode!=='infinite'&&game.answered>=game.target){finish();return}game.question=makeQuestion();game.locked=false;$('.question h2').textContent=`${game.question.a} ${game.question.sym} ${game.question.b} = ?` ;$('#answer').value='';fb.textContent='';fb.className='feedback';$('#answer').focus()},good?420:850);
+}
+function finish(manual=false){
+ if(!game)return;clearInterval(timer);let g=game;game=null;
+ if(g.answered>0){
+  updateDay();data.total+=g.answered;data.days[today()].count+=g.answered;data.xp+=g.correct*5+Math.floor(g.score/10);
+  ['add','sub','mul','div'].forEach(k=>{}); // Operation totals are tracked from generated questions below.
+  if(g.correct>0)award('first','첫걸음');
+  if(g.mode==='timed'&&g.wrong===0&&g.answered>0)award('timed','타임어택 마스터');
+  if(g.mode==='master'&&g.correct===5&&g.wrong===0)award('master','계산의 신');
+  if(g.mode==='challenge'&&g.correct===10&&(Date.now()-g.started)<=30000)award('speed','스피드 러너');
+  if(data.streak>=3)award('streak','꾸준한 탐험가');
+  if(g.mode==='timed')data.best=Math.max(data.best,g.correct);
+  save();render();
+ }
+ $('#gamePanel').innerHTML=`<div class="result"><div class="big">${manual?'👋':g.wrong===0?'🎉':'💪'}</div><h2>${manual?'도전을 마쳤어요!':g.wrong===0?'미션 성공!':'멋진 도전이었어요!'}</h2><p>${manual?'다음에는 더 오래 도전해 볼까요?':'계속 도전할수록 연산 실력이 쑥쑥 자라요.'}</p><div class="result-grid"><div><strong>${g.answered}</strong><small>풀이 문제</small></div><div><strong>${g.correct}</strong><small>정답</small></div><div><strong>${g.score}</strong><small>획득 점수</small></div></div><button id="done">확인</button></div>`;
+ $('#done').onclick=()=>$('#overlay').classList.remove('show');
+}
+$$('.mode').forEach(b=>b.onclick=()=>{$$('.mode').forEach(x=>x.classList.remove('active'));b.classList.add('active');mode=b.dataset.mode;if(mode==='master'){op='mix';$$('#ops .pill').forEach(x=>x.classList.toggle('selected',x.dataset.op==='mix'))}});
+$$('#ops .pill').forEach(b=>b.onclick=()=>{op=b.dataset.op;$$('#ops .pill').forEach(x=>x.classList.toggle('selected',x===b))});
+$$('#levels .pill').forEach(b=>b.onclick=()=>{level=Number(b.dataset.level);$$('#levels .pill').forEach(x=>x.classList.toggle('selected',x===b))});
+$('#startBtn').onclick=start;render();
+})();
+</script>
+</body>
+</html>
